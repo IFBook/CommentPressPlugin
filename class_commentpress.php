@@ -401,49 +401,12 @@ class CommentPress {
 	 */
 	function head( $headers ) {
 		
-		// first, test if we need the TOC Sidebar (blog home, special pages, search and 404)
-		if ( $this->db->is_special_page() OR is_search() OR is_404() ) {
-		
-			// add plugin styles
-			//echo $this->display->get_styles();
-		
-		
-		
-		// next, test for Comment Sidebar (single or page view)
-		} elseif ( is_single() OR is_page() OR is_attachment() ) {
+		// do we have navigation?
+		if ( is_single() OR is_page() OR is_attachment() ) {
 		
 			// initialise nav
-			echo $this->nav->initialise();
+			$this->nav->initialise();
 			
-			/*
-			// Is it one of our themes?
-			if ( !$this->is_allowed_theme() ) {
-					
-				// add javascript settings to page
-				//$this->db->get_javascript_vars();
-				
-			}
-			*/
-			
-			// add plugin styles
-			//echo $this->display->get_styles();
-			
-		
-		
-		// finally, test for Archive Sidebar (everything else)
-		} elseif ( is_home() OR is_category() OR is_day() OR is_month() OR is_year() ) {
-		
-			// add plugin styles
-			//echo $this->display->get_styles();
-		
-		
-		
-		// if all else fails...
-		} else {
-		
-			// add plugin styles
-			//echo $this->display->get_styles();
-		
 		}
 	
 		// add plugin styles
@@ -989,44 +952,6 @@ class CommentPress {
 		// palm off on display
 		$this->display->get_custom_quicktags();
 		
-		/*
-		$js = '
-<script type="text/javascript">
-//<![CDATA[
-	
-	var cp_quicktags_toolbar = document.getElementById("ed_toolbar");  
- 
-	if ( cp_quicktags_toolbar ) {
-	
-		edButtons[edButtons.length] =
-		new edButton(
-			"ed_commentblock"
-			,"commentblock"
-			,"\n\n<!--commentblock-->\n\n"
-			,""
-			,"q"
-		);	
-		
-		var tnewbutton = document.createElement("input");
-		tnewbutton.type = "button";
-		tnewbutton.id = "ed_tinymce";
-		tnewbutton.className = "ed_button";
-		tnewbutton.value = "commentblock";
-		//tnewbutton.onclick = edInsertDemoTinyMCECode;
-		tnewbutton.title = "Insert a commentable block divider";
-		cp_quicktags_toolbar.appendChild(tnewbutton);
-
-	}
-
-//]]>
-</script>
-
-		';
-		
-		// show it
-		echo $js;
-		*/
-	
 	}
 	
 	
