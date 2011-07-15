@@ -1431,6 +1431,27 @@ class CommentPress {
 				// okay
 				$this->is_allowed_theme = true;
 				
+			} else {
+			
+				// is it a child theme?
+				if ( is_child_theme() ) {
+				
+					// get theme data
+					$theme_data = get_theme_data( STYLESHEETPATH.'/style.css' );
+					
+					// get parent theme dir
+					$parent_theme = $theme_data['Template'];
+					
+					// is it a child of our theme?
+					if ( $parent_theme == 'commentpress' ) {
+					
+						// okay
+						$this->is_allowed_theme = true;
+					
+					}
+					
+				}
+				
 			}
 			
 		}
