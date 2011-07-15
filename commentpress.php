@@ -4,12 +4,11 @@ Plugin Name: Commentpress
 Plugin URI: http://www.futureofthebook.org/commentpress/
 Description:  Commentpress allows readers to comment paragraph by paragraph in the margins of a text. You can use it to annotate, gloss, workshop, debate and more!
 Author: Institute for the Future of the Book
-Version: 3.2
+Version: 3.2.1
 Author URI: http://www.futureofthebook.org
 ----------------------------------------------------------------
 Special thanks to:
 Eddie Tejeda @ www.visudo.com for Commentpress 2.0
-Matteo Bicocchi @ www.open-lab.com for mbContainer.js
 The developers of jQuery www.jquery.com
 Mark James, for the icon http://www.famfamfam.com/lab/icons/silk/
 ----------------------------------------------------------------
@@ -27,7 +26,7 @@ define( 'CP_ACTIVATE_THEME', true );
 // ----------------------------------------------------------------
 
 // set version
-define( 'CP_VERSION', '3.2' );
+define( 'CP_VERSION', '3.2.1' );
 
 // set testing flag
 define( 'CP_PLUGIN_TESTING', true );
