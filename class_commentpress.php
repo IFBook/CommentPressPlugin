@@ -1528,7 +1528,7 @@ QTAG;
 			}
 	
 		// test for Archive Sidebar (everything else)
-		} elseif ( is_home() OR is_category() OR is_day() OR is_month() OR is_year() ) {
+		} elseif ( is_home() OR is_category() OR is_tag() OR is_day() OR is_month() OR is_year() ) {
 		
 			// set default sidebar
 			return 'archive';
@@ -1810,9 +1810,9 @@ QTAG;
 			}
 
 			// assign icons to paras
-			// NOTE: temporary fix to exclude <param> tags by excluding subsequent 'a' char
+			// NOTE: temporary fix to exclude <param> and <pre> tags by excluding subsequent 'a' and 'r' chars
 			// this regex needs more attention so that only <p> and <p ...> are captured
-			$pattern = array('#<('.$tag.'[^a>]*)>#');
+			$pattern = array('#<('.$tag.'[^a^r>]*)>#');
 			$replace = array( $this->display->get_para_tag( $text_signature, $commenticon, $tag ) );
 			$block = preg_replace( $pattern, $replace, $paragraph );
 			
