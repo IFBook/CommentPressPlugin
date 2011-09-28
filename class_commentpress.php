@@ -1365,6 +1365,17 @@ QTAG;
 	 */
 	function is_allowed_theme() {
 	
+		// given the variety of names that people give the Commentpress theme directory,
+		// I have given up trying to enforce the use of the Commentpress theme or one of
+		// it's derivatives. Adding the theme to the allowed_themes array at the top of
+		// this file is probably an unnecessary requirement now. People use this at their
+		// own risk anyway :-)
+		
+		// --<
+		return true;
+		
+		
+	
 		// have we tested this yet?
 		if ( !isset( $this->is_allowed_theme ) ) {
 		
@@ -1387,6 +1398,8 @@ QTAG;
 				
 					// get theme data
 					$theme_data = get_theme_data( STYLESHEETPATH.'/style.css' );
+					
+					//print_r( $theme_data ); die();
 					
 					// get parent theme dir
 					$parent_theme = $theme_data['Template'];
