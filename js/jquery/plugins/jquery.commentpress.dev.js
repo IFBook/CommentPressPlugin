@@ -348,10 +348,10 @@ Array.prototype.remove_item = function( item ) {
 		var padding_left = parseInt( element.css( 'padding-left' ).split('px')[0] );
 
 		/*
-		alert( 'padding_bottom: ' + padding_bottom );
-		alert( 'padding_top: ' + padding_top );
-		alert( 'padding_right: ' + padding_right );
-		alert( 'padding_left: ' + padding_left );
+		console.log( 'padding_bottom: ' + padding_bottom );
+		console.log( 'padding_top: ' + padding_top );
+		console.log( 'padding_right: ' + padding_right );
+		console.log( 'padding_left: ' + padding_left );
 		*/
 		
 		// get margin
@@ -361,15 +361,15 @@ Array.prototype.remove_item = function( item ) {
 		var margin_left = parseInt( element.css( 'margin-left' ).split('px')[0] );
 		
 		/*
-		alert( 'margin_top: ' + margin_top );
-		alert( 'margin_bottom: ' + margin_bottom );
-		alert( 'margin_right: ' + margin_right );
-		alert( 'margin_left: ' + margin_left );
+		console.log( 'margin_top: ' + margin_top );
+		console.log( 'margin_bottom: ' + margin_bottom );
+		console.log( 'margin_right: ' + margin_right );
+		console.log( 'margin_left: ' + margin_left );
 		*/
 		
 		// gap between paragraphs
 		var gap = margin_top + margin_bottom + padding_top + padding_bottom;
-		//alert( 'element gap: ' + gap );
+		//console.log( 'element gap: ' + gap );
 
 		// so, halve it
 		var half_gap = parseInt( gap / 2 );
@@ -381,10 +381,10 @@ Array.prototype.remove_item = function( item ) {
 		var height = parseInt( element.height() ) + ( selected_para_widen * 2 );
 
 		/*
-		alert( 'element top: ' + top );
-		alert( 'element left: ' + left );
-		alert( 'element width: ' + width );
-		alert( 'element height: ' + height );
+		console.log( 'element top: ' + top );
+		console.log( 'element left: ' + left );
+		console.log( 'element width: ' + width );
+		console.log( 'element height: ' + height );
 		
 		// init adjustor value
 		var adjust = 0;
@@ -405,10 +405,10 @@ Array.prototype.remove_item = function( item ) {
 		*/
 
 		/*
-		alert( 'final top: ' + top );
-		alert( 'final left: ' + left );
-		alert( 'final width: ' + width );
-		alert( 'final height: ' + height );
+		console.log( 'final top: ' + top );
+		console.log( 'final left: ' + left );
+		console.log( 'final width: ' + width );
+		console.log( 'final height: ' + height );
 		*/
 		
 		// unhighlight_text();		
@@ -460,146 +460,15 @@ Array.prototype.remove_item = function( item ) {
 	
 	
 	/** 
-	 * @description: save comment box position
-	 * @todo: 
-	 *
-	 */	
-	$.save_position = function() {
-	
-		// get params
-		var browser_scroll_top = $(window).scrollTop();
-		var commentbox_top = $('#commentbox').position().top;
-		var commentbox_left = $('#commentbox').position().left;
-		var commentbox_relative_top = (commentbox_top - browser_scroll_top);
-		
-		// save in cookie
-		$.cookie( 'left_postion_commentbox', commentbox_left.toString(), { expires: 28, path: '/' } );
-		$.cookie( 'top_postion_commentbox', commentbox_relative_top.toString(), { expires: 28, path: '/' } );
-		
-	}
-	
-	
-	
-	/** 
-	 * @description: load comment box position
-	 * @todo: there's a mismatch between set position and actual position
-	 *
-	 */	
-	$.load_position = function( top, left, user_can_move ) {
-	
-		// assume box position is sysadmin defined - we pass the default
-		// values to this method and only override if all conditions are met
-
-		// can user move it?
-		if( user_can_move != 0 ) {
-		
-			// did they move it?
-			if ( $.cookie('left_postion_commentbox') && $.cookie('top_postion_commentbox') ) {
-		
-				// cookie defined
-				var top = $.cookie('top_postion_commentbox');
-				var left = $.cookie('left_postion_commentbox');
-		
-			}
-			
-		} else {
-			
-			// do the cookies exist?
-			if ( $.cookie('left_postion_commentbox') && $.cookie('top_postion_commentbox') ) {
-		
-				// delete cookies
-				$.cookie('left_postion_commentbox', '', { expires: -1, path: '/' });
-				$.cookie('top_postion_commentbox', '', { expires: -1, path: '/' });
-				
-			}
-			
-		}
-		
-		// there's a mismatch between set position and actual position...
-		
-		//alert( 'Load top: ' + top );
-		//alert( 'Load left: ' + left );
-
-		// set position
-		$("#commentbox").css("left", left + 'px');
-		$("#commentbox").css("top", top + 'px');
-		
-		//alert( 'Final top: ' + $('#commentbox').position().top );
-		//alert( 'Final left: ' + $('#commentbox').position().left );
-	
-	}
-	
-	
-	
-	/** 
-	 * @description: save comment box dimensions
-	 * @todo: 
-	 *
-	 */	
-	$.save_size = function() {
-	
-		// get params
-		var commentbox_height = $("#commentbox").height();
-		var commentbox_width = $("#commentbox").width();
-		
-		// save in cookie
-		$.cookie( 'height_commentbox', commentbox_height.toString(), { expires: 28, path: '/' } );
-		$.cookie( 'width_commentbox', commentbox_width.toString(), { expires: 28, path: '/' } );
-		
-	}
-	
-	
-	
-	/** 
-	 * @description: load comment box dimensions
-	 * @todo: 
-	 *
-	 */	
-	$.load_size = function( height, width, user_can_resize ) {
-	
-		// can user move it?
-		if( user_can_resize != 0 ) {
-		
-			// did they move it?
-			if ( $.cookie('height_commentbox') && $.cookie('width_commentbox') ) {
-		
-				// save in cookie
-				var height = $.cookie('height_commentbox');
-				var width = $.cookie('width_commentbox');
-				
-			}
-		
-		} else {
-		
-			// do the cookies exist?
-			if ( $.cookie('height_commentbox') && $.cookie('width_commentbox') ) {
-		
-				// delete cookies
-				$.cookie('height_commentbox', '', { expires: -1, path: '/' });
-				$.cookie('width_commentbox', '', { expires: -1, path: '/' });
-				
-			}
-			
-		}
-		
-		// set position
-		$("#commentbox").css("height", height + 'px');
-		$("#commentbox").css("width", width + 'px');
-		
-	}
-	
-	
-	
-	/** 
 	 * @description: set height of sidebar minimiser (scrolling element) so that the column fills the viewport
 	 * @todo: 
 	 *
 	 */
 	$.set_sidebar_height = function() {
-	
+		
 		var sidebar = $('#sidebar');
 		var sidebar_inner = $('#sidebar_inner');
-		
+		var sidebar_container = $('#toc_sidebar');
 		var header = $('#' + $.get_sidebar_name() + '_sidebar .sidebar_header');
 		var minimiser = $.get_sidebar_pane();
 	
@@ -607,26 +476,37 @@ Array.prototype.remove_item = function( item ) {
 		var viewport_height = $(window).height();
 		var viewport_scrolltop = $(window).scrollTop();
 		var viewport = viewport_height + viewport_scrolltop;
-		//alert( 'viewport: ' + viewport );
+		//console.log( 'viewport: ' + viewport );
 		
 		// get data on sidebar element
-		var c_top = $.css_to_num( $.px_to_num( sidebar.css('top') ) );
-		var c_top = sidebar.position().top;
-		//alert( 'c_top: ' + c_top );
+		//var s_top = $.css_to_num( $.px_to_num( sidebar.css('top') ) );
+		var s_top = sidebar.position().top;
+		//console.log( 's_top: ' + s_top );
+		var sidebar_inside_h = $.get_element_adjust( sidebar );
+		var sidebar_inner_inside_h = $.get_element_adjust( sidebar_inner );
+		var sidebar_diff = s_top + sidebar_inside_h + sidebar_inner_inside_h;
+		//console.log( 'sidebar_diff: ' + sidebar_diff );
+
+		// get data on sidebar_container element
+		var sc_top = sidebar_container.position().top;
+		//console.log( 'sc_top: ' + sc_top );
+		var sc_inside_h = $.get_element_adjust( sidebar_container );
+		//console.log( 'sc_inside_h: ' + sc_inside_h );
+		var sc_diff = sc_top + sc_inside_h;
+		//console.log( 'sc_diff: ' + sc_diff );
 		
-		var sidebar_adjust = $.get_element_adjust( sidebar );
-		var sidebar_inner_adjust = $.get_element_adjust( sidebar_inner );
-
-		var sidebar_diff = c_top + sidebar_adjust + sidebar_inner_adjust;
-		//alert( 'sidebar_diff: ' + sidebar_diff );
-
-		// get data on header element
-		var header_diff = header.height() + $.get_element_adjust( header );
-		//alert( 'header_diff: ' + header_diff );
+		// init header diff
+		var header_diff = 0;
+		// if internal header element is displayed
+		if ( header.css('display') != 'none' ) {
+			// get data on header element
+			header_diff = header.height() + $.get_element_adjust( header );
+		}
+		//console.log( 'header_diff: ' + header_diff );
 
 		// get data on minimiser element
 		var minimiser_diff = $.get_element_adjust( minimiser );
-		//alert( 'minimiser_diff: ' + minimiser_diff );
+		//console.log( 'minimiser_diff: ' + minimiser_diff );
 		
 		// get bottom margin of main column so sidebar lines up
 		// NOTE: this is NOT why they don't line up - it just so happens that the values match
@@ -636,13 +516,13 @@ Array.prototype.remove_item = function( item ) {
 		} else {
 			var bottom_margin = $.css_to_num( $.px_to_num( $('#page_wrapper').css( 'margin-bottom' ) ) );
 		}
-		//alert( 'bottom_margin: ' + $('#page_wrapper').css( 'margin-bottom' ) );
+		//console.log( 'bottom_margin: ' + bottom_margin );
 		
 		// calculate the necessary height to reach the bottom of the viewport
-		var to_bottom = viewport - ( sidebar_diff + header_diff + minimiser_diff + bottom_margin );
-		//alert( 'to_bottom: ' + to_bottom );
+		var to_bottom = viewport - ( sidebar_diff + sc_diff + header_diff + minimiser_diff + bottom_margin );
+		//console.log( 'to_bottom: ' + to_bottom );
 		
-		$('#sidebar div.sidebar_minimiser').css( 'height', to_bottom + 'px' );
+		$('#sidebar div.sidebar_contents_wrapper').css( 'height', to_bottom + 'px' );
 		
 		// --<
 		return to_bottom;
@@ -676,7 +556,7 @@ Array.prototype.remove_item = function( item ) {
 		// add 'em up
 		var element_adjust = w_bt + w_bb + w_pad_t + w_pad_b + w_mar_t + w_mar_b;
 
-		//alert( 'element_adjust: ' + element_adjust );
+		//console.log( 'element_adjust: ' + element_adjust );
 
 		// --<
 		return element_adjust;
@@ -724,7 +604,7 @@ Array.prototype.remove_item = function( item ) {
 		if ( cp_default_sidebar == 'comments' ) {
 			name = 'comments';
 			if ( cp_toc_on_top == 'y' ) {
-				//alert( 'toc on comments_sidebar' );
+				//console.log( 'toc on comments_sidebar' );
 				name = 'toc';
 			}
 		}
@@ -733,7 +613,7 @@ Array.prototype.remove_item = function( item ) {
 		if ( cp_default_sidebar == 'archive' ) {
 			name = 'archive';
 			if ( cp_toc_on_top == 'y' ) {
-				//alert( 'toc on archive_sidebar' );
+				//console.log( 'toc on archive_sidebar' );
 				name = 'toc';
 			}
 		}
@@ -763,7 +643,7 @@ Array.prototype.remove_item = function( item ) {
 		var percent = ( 1 - distance / Math.max( str1.length, str2.length ) ) * 100;
 		
 		// debug
-		//alert( 'TESTING: ' + str1 + ' AND ' + str2 + ' PERCENT: ' + percent );
+		//console.log( 'TESTING: ' + str1 + ' AND ' + str2 + ' PERCENT: ' + percent );
 
 
 

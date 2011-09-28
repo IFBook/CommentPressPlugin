@@ -211,7 +211,9 @@ class CommentPressDisplay {
 		
 			'cp_custom_quicktags',
 			trailingslashit( get_bloginfo('wpurl') ) . CP_PLUGIN_REL_PATH . 'js/cp_quicktags.js',
-			array('quicktags')
+			array('quicktags'),
+			NULL, // no version
+			FALSE // not in footer (but may need to be in WP 3.3)
 			
 		);
 
@@ -275,7 +277,7 @@ class CommentPressDisplay {
 		
 		/*
 		// We should eventually use:
-		wp_enqueue_style( $handle, $src, $deps, $ver, $media );
+		wp_enqueue_style( $handle, $src, $deps, $ver, $media );
 		
 		// always add jQuery UI
 		wp_enqueue_style( 'jquery.ui.all', $this->jquery_path.'theme/ui.all.css' );
@@ -748,7 +750,7 @@ class CommentPressDisplay {
 	function get_minimise_button( $sidebar = 'comments' ) {
 	
 		// define minimise button
-		$tag = '<img id="cp_minimise_'.$sidebar.'" class="alignright cp_button" src="'.get_bloginfo('template_directory').'/style/images/icons/close.png" alt="minimise button" title="Toggle Sidebar" />';
+		$tag = '<img id="cp_minimise_'.$sidebar.'" class="cp_button" src="'.get_bloginfo('template_directory').'/style/images/icons/close.png" alt="minimise button" title="Toggle Sidebar" />';
 		
 		// --<
 		return $tag;
@@ -772,7 +774,7 @@ class CommentPressDisplay {
 	function get_minimise_all_button( $sidebar = 'comments' ) {
 	
 		// define minimise button
-		$tag = '<img id="cp_minimise_all_'.$sidebar.'" class="alignright cp_button" src="'.get_bloginfo('template_directory').'/style/images/icons/min.png" alt="minimise all button" title="Minimise all Comment Sections" />';
+		$tag = '<span id="cp_minimise_all_comments" title="Minimise all Comment Sections"></span>';
 		
 		// --<
 		return $tag;

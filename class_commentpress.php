@@ -961,6 +961,30 @@ class CommentPress {
 		
 		
 	/** 
+	 * @description: adds quicktag button to page editor in WP 3.3
+	 * @todo: 
+	 *
+	 */
+	function commentblock_quicktag_button_print() {
+	
+		// palm off on display
+		$script = <<<QTAG
+<script type='text/javascript'>
+QTags.addButton( 'commentblock', 'c-block', '\n<!--commentblock-->\n' );
+</script>
+QTAG;
+		
+		echo $script;
+		
+	}
+	
+	
+	
+	
+		
+		
+		
+	/** 
 	 * @description: stores our additional params
 	 * @param integer $post_id the ID of the post (or revision)
 	 * @param integer $post the post object
@@ -1349,7 +1373,7 @@ class CommentPress {
 	
 			// detect theme name
 			$this->theme_name = get_current_theme();
-			
+
 			// Is it one of our themes?
 			if ( in_array( $this->theme_name, $this->allowed_theme_names ) ) {
 			
@@ -1366,7 +1390,7 @@ class CommentPress {
 					
 					// get parent theme dir
 					$parent_theme = $theme_data['Template'];
-					
+
 					// is it a child of our theme?
 					if ( $parent_theme == 'commentpress' ) {
 					
@@ -1636,8 +1660,18 @@ class CommentPress {
 			// help
 			add_action( 'contextual_help', array( &$this, 'contextual_help' ) );
 			
-			// comment block quicktag
-			add_action('admin_print_scripts', array( &$this, 'commentblock_quicktag_button' ) );
+			// there's a new quicktags script in 3.3
+			if ( version_compare( $wp_version, '3.3', '>=' ) ) {
+				
+				// comment block quicktag (NEEDS TESTING!)
+				add_action('admin_print_footer_scripts', array( &$this, 'commentblock_quicktag_button_print' ), 20 );
+				
+			} else {
+			
+				// comment block quicktag
+				add_action('admin_print_scripts', array( &$this, 'commentblock_quicktag_button' ) );
+				
+			}
 			
 		} else {
 		
