@@ -527,23 +527,59 @@ class CommentPressNavigator {
 		// are parent pages viewable?
 		$viewable = ( $this->parent_obj->db->option_get( 'cp_toc_chapter_is_page' ) == '1' ) ? true : false;
 		
-		// get id of first child
-		$first_child = $this->get_first_child( $post->ID );
+		// if they are...
+		if ( $viewable ) {
 		
-		// our conditions
-		if ( !$first_child ) {
+			// get page number from array
+			$num = $this->_get_page_number( $page_id );
 			
-			// get from array
-			if ( array_key_exists( $page_id, $this->page_numbers ) ) {
+		} else {
+		
+			// get id of first viewable child
+			$first_child = $this->get_first_child( $post->ID );
 			
-				// set it
-				$num = $this->page_numbers[ $page_id ];
-			
+			// if this is a childless page
+			if ( !$first_child ) {
+				
+				// get page number from array
+				$num = $this->_get_page_number( $page_id );
+				
 			}
 			
 		}
 	
 	
+	
+		// --<
+		return $num;
+
+	}
+
+
+
+
+
+
+
+	/** 
+	 * @description: get page number
+	 * @param integer $page_id the page ID
+	 * @return integer $number number of the page
+	 * @todo:
+	 *
+	 */
+	function _get_page_number( $page_id ) {
+	
+		// init
+		$num = 0;
+		
+		// get from array
+		if ( array_key_exists( $page_id, $this->page_numbers ) ) {
+		
+			// get it
+			$num = $this->page_numbers[ $page_id ];
+		
+		}
 	
 		// --<
 		return $num;

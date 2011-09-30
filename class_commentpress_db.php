@@ -1483,7 +1483,12 @@ class CommentPressDatabase {
 		$vars['cp_is_mobile'] = 0;
 
 		// is it a mobile?
-		if ( $this->is_mobile_touch OR $this->is_mobile ) {
+		if ( 
+		
+			( isset( $this->is_mobile_touch ) AND $this->is_mobile_touch ) OR 
+			( isset( $this->is_mobile ) AND $this->is_mobile )
+			
+		) {
 			
 			// not mobile
 			$vars['cp_is_mobile'] = 1;
@@ -1518,7 +1523,10 @@ class CommentPressDatabase {
 			$url_info = parse_url( get_option('siteurl') );
 			
 			// add path for cookies
-			$vars['cp_cookie_path'] = trailingslashit( $url_info['path'] );
+			$vars['cp_cookie_path'] = '/';
+			if ( isset( $url_info['path'] ) ) {
+				$vars['cp_cookie_path'] = trailingslashit( $url_info['path'] );
+			}
 			
 			// add page
 			global $page;

@@ -376,7 +376,10 @@ class CommentPressDisplay {
 				);
 		
 				// use method adapted from WP core
-				$this->_get_tinymce( $set );
+				//$this->_get_tinymce( $settings );
+				
+				// don't need settings
+				$this->_get_tinymce();
 			
 			} else {
 			
