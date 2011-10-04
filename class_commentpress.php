@@ -1395,7 +1395,7 @@ QTAG;
 					$parent_theme = $theme_data['Template'];
 
 					// is it a child of our theme?
-					if ( $parent_theme == 'commentpress' ) {
+					if ( $parent_theme == 'Commentpress' ) {
 					
 						// okay
 						$this->is_allowed_theme = true;
