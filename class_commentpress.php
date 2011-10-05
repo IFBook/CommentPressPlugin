@@ -40,14 +40,6 @@ class CommentPress {
 	// display object
 	var $display;
 	
-	// set the names of allowed Commentpress theme variants
-	var $allowed_theme_names = array(
-	
-		'Commentpress Home', // the multisite home theme
-		'Commentpress'       // the default Commentpress theme
-	
-	);
-	
 	// init text_signatures
 	var $text_signatures = array();
 	
@@ -1368,51 +1360,15 @@ QTAG;
 	 */
 	function is_allowed_theme() {
 	
-		// have we tested this yet?
-		if ( !isset( $this->is_allowed_theme ) ) {
+		// given the variety of names that people give the Commentpress theme directory,
+		// I have given up trying to enforce the use of the Commentpress theme or one of
+		// it's derivatives. Adding the theme to the allowed_themes array at the top of
+		// this file is probably an unnecessary requirement now. People use this at their
+		// own risk anyway :-)
 		
-			// assume it's not
-			$this->is_allowed_theme = false;
-	
-			// detect theme name
-			$this->theme_name = get_current_theme();
-
-			// Is it one of our themes?
-			if ( in_array( $this->theme_name, $this->allowed_theme_names ) ) {
-			
-				// okay
-				$this->is_allowed_theme = true;
-				
-			} else {
-			
-				// is it a child theme?
-				if ( is_child_theme() ) {
-				
-					// get theme data
-					$theme_data = get_theme_data( STYLESHEETPATH.'/style.css' );
-					
-					// get parent theme dir
-					$parent_theme = $theme_data['Template'];
-
-					// is it a child of our theme?
-					if ( $parent_theme == 'commentpress' ) {
-					
-						// okay
-						$this->is_allowed_theme = true;
-					
-					}
-					
-				}
-				
-			}
-			
-		}
-	
-
-
 		// --<
-		return $this->is_allowed_theme;
-
+		return true;
+		
 	}
 	
 	
