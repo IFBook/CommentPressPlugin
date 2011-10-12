@@ -46,6 +46,9 @@ class CommentPress {
 	// database object
 	var $db;
 	
+	// options page
+	var $options_page;
+	
 
 
 
@@ -198,7 +201,7 @@ class CommentPress {
 				$saved = $this->db->options_update();
 				
 				// insert item in relevant menu
-				$page = add_options_page(
+				$this->options_page = add_options_page(
 					'Commentpress Settings', 
 					'Commentpress', 
 					'manage_options', 
@@ -206,13 +209,13 @@ class CommentPress {
 					array( &$this, 'options_page' )
 				);
 				
-				//print_r( $page );die();
+				//print_r( $this->options_page );die();
 				
 				// add scripts and styles
-				add_action( "admin_print_scripts-$page", array( &$this, 'admin_js' ) );
-				add_action( "admin_print_styles-$page", array( &$this, 'admin_css' ) );
-				add_action( "admin_head-$page", array( &$this, 'admin_head' ), 50 );
-		
+				add_action( 'admin_print_scripts-'.$this->options_page, array( &$this, 'admin_js' ) );
+				add_action( 'admin_print_styles-'.$this->options_page, array( &$this, 'admin_css' ) );
+				add_action( 'admin_head-'.$this->options_page, array( &$this, 'admin_head' ), 50 );
+				
 			}
 			
 		}
@@ -237,6 +240,18 @@ class CommentPress {
 		
 		// get admin javascript
 		echo $this->display->get_admin_js();
+		
+		// there's a new screen object for help in 3.3
+		global $wp_version;
+		if ( version_compare( $wp_version, '3.2.99999', '>=' ) ) {
+		
+			$screen = get_current_screen();
+			//print_r( $screen ); die();
+			
+			// use method in this class
+			$this->options_help( &$screen );
+			
+		}
 		
 	}
 	
@@ -909,26 +924,62 @@ class CommentPress {
 		
 		
 	/** 
-	 * @description: adds help copy to admin page
+	 * @description: adds help copy to admin page in WP <= 3.2
 	 * @todo: 
 	 *
 	 */
 	function contextual_help( $text ) {
 		
-		$screen = $_GET['page'];
+		$text = '';
+		$screen = isset( $_GET['page'] ) ? $_GET['page'] : '';
 		if ($screen == 'cp_admin_page') {
 		
-			// test
-			$text = '
-<h5>Commentpress Help</h5>
-<p>For further information about installing and using Commentpress, please refer to the <a href="http://www.futureofthebook.org/commentpress/support/">Commentpress support pages</a>.</p>
-';
+			// get help text
+			$text = '<h5>Commentpress Help</h5>';
+			$text .= $this->display->get_help();
 			
 		}
 		
 		// --<
 		return $text;
 	
+	}
+	
+	
+	
+	
+		
+		
+		
+	/** 
+	 * @description: adds help copy to admin page in WP3.3+
+	 * @todo: 
+	 *
+	 */
+	function options_help( $screen ) {
+	
+		//print_r( $screen ); die();
+		
+		// is this our screen?
+		if ( $screen->id != $this->options_page ) {
+		
+			// no, kick out
+			return;
+			
+		}
+		
+		// add a tab
+		$screen->add_help_tab( array(
+		
+			'id'      => 'commentpress-base',
+			'title'   => __('Commentpress Help', 'commentpress_textdomain'),
+			'content' => $this->display->get_help(),
+			
+		));
+		
+		// --<
+		return $screen;
+
 	}
 	
 	
@@ -1598,6 +1649,9 @@ QTAG;
 	 */
 	function _register_hooks() {
 	
+		// access version
+		global $wp_version;
+	
 		// use translation
 		add_action( 'init', array( &$this, 'translation' ) );
 		
@@ -1616,11 +1670,24 @@ QTAG;
 			// intercept save
 			add_action('save_post', array( &$this, 'save_post' ), 1, 2 );
 			
-			// help
-			add_action( 'contextual_help', array( &$this, 'contextual_help' ) );
+			// there's a new screen object in 3.3
+			if ( version_compare( $wp_version, '3.2.99999', '>=' ) ) {
+			
+				// use new help functionality
+				//add_action('add_screen_help_and_options', array( &$this, 'options_help' ) );
+
+				// NOTE: help is actually called in $this->admin_head() because the 
+				// 'add_screen_help_and_options' action does not seem to be working in 3.3-beta1
+			
+			} else {
+			
+				// previous help method
+				add_action( 'contextual_help', array( &$this, 'contextual_help' ) );
+				
+			}
 			
 			// there's a new quicktags script in 3.3
-			if ( version_compare( $wp_version, '3.3', '>=' ) ) {
+			if ( version_compare( $wp_version, '3.2.99999', '>=' ) ) {
 				
 				// comment block quicktag (NEEDS TESTING!)
 				add_action('admin_print_footer_scripts', array( &$this, 'commentblock_quicktag_button_print' ), 20 );

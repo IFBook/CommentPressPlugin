@@ -456,6 +456,35 @@ class CommentPressDisplay {
 	
 
 	/** 
+	 * @description: get help text
+	 * @return HTML $help
+	 * @todo: 
+	 *
+	 */
+	function get_help() {
+	
+		$help = <<<HELPTEXT
+<p>For further information about using Commentpress, please refer to the <a href="http://www.futureofthebook.org/commentpress/support/">Commentpress support pages</a> or use one of the links below:</p>
+
+<ul>
+<li><a href="http://www.futureofthebook.org/commentpress/support/structuring-your-document/">Structuring your Document</a></li>
+<li><a href="http://www.futureofthebook.org/commentpress/support/formatting-your-document/">Formatting Your Document</a></li>
+<li><a href="http://www.futureofthebook.org/commentpress/support/using-commentpress/">How to read a Commentpress document</a></li>
+</ul>
+HELPTEXT;
+
+		// --<
+		return $help;
+
+	}
+	
+	
+	
+	
+	
+	
+
+	/** 
 	 * @description: construct a javascript for inclusion in the HTML of the page
 	 * @param array $vars array of variables and their values
 	 * @param string $comment description for reference

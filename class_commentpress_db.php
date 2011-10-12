@@ -628,7 +628,7 @@ class CommentPressDatabase {
 
 
 	 	// was the form submitted?
-		if( $_POST['cp_submit'] ) {
+		if( isset( $_POST['cp_submit'] ) ) {
 			
 
 
@@ -1262,7 +1262,8 @@ class CommentPressDatabase {
 		
 		
 		// authenticate
-		if ( !wp_verify_nonce( $_POST['cp_nonce'], 'cp_page_settings' ) ) { return; }
+		$_nonce = isset( $_POST['cp_nonce'] ) ? $_POST['cp_nonce'] : '';
+		if ( !wp_verify_nonce( $_nonce, 'cp_page_settings' ) ) { return; }
 		
 		// is this an auto save routine?
 		if ( defined('DOING_AUTOSAVE') AND DOING_AUTOSAVE ) { return; }
