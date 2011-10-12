@@ -1016,7 +1016,10 @@ class CommentPress {
 		// palm off on display
 		$script = <<<QTAG
 <script type='text/javascript'>
-QTags.addButton( 'commentblock', 'c-block', '\n<!--commentblock-->\n' );
+/* <![CDATA[ */
+console.log(QTags);
+QTags.addButton( 'commentblock', 'c-block', '\\n<!--commentblock-->\\n' );
+/* ]]> */
 </script>
 QTAG;
 		
@@ -1025,7 +1028,7 @@ QTAG;
 	}
 	
 	
-	
+
 	
 		
 		
