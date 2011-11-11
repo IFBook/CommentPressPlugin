@@ -357,8 +357,8 @@ class CommentPress {
 	 */
 	function script_libs() {
 		
-		// don't include in admin
-		if ( !is_admin() ) {
+		// don't include in admin or wp-login.php
+		if ( !is_admin() AND $GLOBALS['pagenow'] != 'wp-login.php' ) {
 		
 			// add jQuery libraries
 			$this->display->get_jquery();
@@ -1849,9 +1849,45 @@ QTAG;
 			
 			}
 
+			/*
+			-------------------------------------------------------------
+			NOTES
+			-------------------------------------------------------------
+			
+			There's a temporary fix to exclude <param> and <pre> tags by excluding subsequent 'a' and 
+			'r' chars - this regex needs more attention so that only <p> and <p ...> are captured.
+			In HTML5 there is also the <progress> tag, but this is excluded along with <pre>
+			Also, the WordPress visual editor inserts styles into <p> tags for text justification,
+			so we need to feed this regex with enhanced tags to capture the following:
+			
+			<p style="text-align:left;"> 
+			<p style="text-align:right;"> 
+			<p style="text-align:center;">
+			<p style="text-align:justify;">
+
+			-------------------------------------------------------------
+			*/
+			
+			// further checks when there's a <p> tag
+			if ( $tag == 'p' ) {
+				
+				// set pattern by TinyMCE tag attribute
+				switch ( substr( $paragraph, 0 , 22 ) ) {
+				
+					case '<p style="text-align:l': $tag = 'p style="text-align:left;"'; break;
+					case '<p style="text-align:r': $tag = 'p style="text-align:right;"'; break;
+					case '<p style="text-align:c': $tag = 'p style="text-align:center;"'; break;
+					case '<p style="text-align:j': $tag = 'p style="text-align:justify;"'; break;
+					
+					// if we fall through to here, treat it like it's just a <p> tag above.
+					// This will fail if there are custom attributes set in the HTML editor,
+					// but I'm not sure how to handle that without migrating to an XML parser
+				
+				}
+	
+			}
+
 			// assign icons to paras
-			// NOTE: temporary fix to exclude <param> and <pre> tags by excluding subsequent 'a' and 'r' chars
-			// this regex needs more attention so that only <p> and <p ...> are captured
 			$pattern = array('#<('.$tag.'[^a^r>]*)>#');
 			$replace = array( $this->display->get_para_tag( $text_signature, $commenticon, $tag ) );
 			$block = preg_replace( $pattern, $replace, $paragraph );

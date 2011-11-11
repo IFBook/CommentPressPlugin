@@ -635,7 +635,16 @@ class CommentPressDatabase {
 			// check that we trust the source of the data
 			check_admin_referer( 'cp_admin_action', 'cp_nonce' );
 		
-
+			
+			
+			// init vars
+			$cp_install = '';
+			$cp_uninstall = '';
+			$cp_upgrade = '';
+			$cp_reset = '';
+			$cp_create_pages = '';
+			$cp_delete_pages = '';
+			$cp_para_comments_live = '';
 
 			// get variables
 			extract( $_POST );
