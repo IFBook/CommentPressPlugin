@@ -216,6 +216,21 @@ class CommentPress {
 			
 		}
 	
+	}
+	
+	
+	
+	
+	
+	
+	
+	/**
+	 * @description: configure when BuddyPress is loaded
+	 * @todo: 
+	 *
+	 */
+	function buddypress_globals_loaded() {
+	
 		// for bp-groupblog integration...
 		if ( 
 			
@@ -231,7 +246,9 @@ class CommentPress {
 		) {
 		
 			// check if this blog is a group blog...
-			if ( !empty( bp_get_groupblog_id() ) ) {
+			$group_id = get_groupblog_group_id( get_current_blog_id() );
+			
+			if ( !empty( $group_id ) ) {
 
 				// okay, we're properly configured
 				$this->bp_groupblog = true;
@@ -1927,6 +1944,9 @@ class CommentPress {
 		
 		// enable BuddyPress functionality
 		add_action( 'bp_include', array( &$this, 'buddypress_init' ) );
+		
+		// add BuddyPress functionality
+		add_action( 'bp_setup_globals', array( &$this, 'buddypress_globals_loaded' ) );
 		
 	}
 	
