@@ -86,22 +86,34 @@ class CommentPressDisplay {
 	/** 
 	 * @description: if needed, sets up this object
 	 * @param integer $blog_id the ID of the blog - default null
-	 * @todo: 
+	 * @todo: for BP, activate BP child theme
 	 *
 	 */
 	function initialise( $blog_id = null ) {
 	
-		// if we're force-activating in multisite (or sitewide) and we want the official theme
+		// if we're force-activating in multisite and we want the official theme
 		if ( 
 		
-			( CP_PLUGIN_CONTEXT == 'mu_forced' OR CP_PLUGIN_CONTEXT == 'mu_sitewide' ) AND 
-			CP_ACTIVATE_THEME === true 
+			CP_PLUGIN_CONTEXT == 'mu_forced' 
+			AND CP_ACTIVATE_THEME === true 
 			
 		) {
 		
-			// activate the default Commentpress theme
-			switch_theme( 'commentpress', 'commentpress' );
+			// activate our base theme
+			// NOTE: should this be removed in favour of a Network Admin screen option?
+			$themes = get_themes();
+			
+			// the key is the theme name
+			if ( isset( $themes['Commentpress'] ) ) {
+				
+				// activate it
+				switch_theme( 
+					$themes['Commentpress']['Template'], 
+					$themes['Commentpress']['Stylesheet'] 
+				);
 		
+			}
+			
 		}
 
 	}
@@ -154,12 +166,25 @@ class CommentPressDisplay {
 	 */
 	function get_jquery() {
 	
+		// default to minified scripts
+		$debug_state = '';
+	
+		// target different scripts when debugging
+		if ( defined( 'WP_DEBUG' ) AND WP_DEBUG === true ) {
+		
+			// use uncompressed scripts
+			$debug_state = '.dev';
+		
+		}
+		
+		
+		
 		// add our javascript plugin and dependencies
 		// NOTE: the UI has to be added separately, as the built in one is not the latest
 		wp_enqueue_script(
 		
 			'jquery_commentpress', 
-			$this->jquery_plugins_path.'jquery.commentpress.js', 
+			$this->jquery_plugins_path.'jquery.commentpress'.$debug_state.'.js', 
 			array('jquery','jquery-form')
 		
 		);
@@ -206,16 +231,42 @@ class CommentPressDisplay {
 	 */
 	function get_custom_quicktags() {
 	
-		// add our javascript script and dependencies
-		wp_enqueue_script(
+		// don't bother if the current user lacks permissions
+		if ( ! current_user_can('edit_posts') && ! current_user_can('edit_pages') ) {
+			return;
+		}
 		
-			'cp_custom_quicktags',
-			trailingslashit( get_bloginfo('wpurl') ) . CP_PLUGIN_REL_PATH . 'js/cp_quicktags.js',
-			array('quicktags'),
-			NULL, // no version
-			FALSE // not in footer (but may need to be in WP 3.3)
+		// need access to WP version
+		global $wp_version;
+	
+		// there's a new quicktags script in 3.3
+		if ( version_compare( $wp_version, '3.2.99999', '>=' ) ) {
+		
+			// add our javascript script and dependencies
+			wp_enqueue_script(
 			
-		);
+				'cp_custom_quicktags',
+				plugin_dir_url( CP_PLUGIN_FILE ) . 'js/cp_quicktags_3.3.js',
+				array('quicktags'),
+				NULL, // no version
+				true // in footer
+				
+			);
+			
+		} else {
+		
+			// add our javascript script and dependencies
+			wp_enqueue_script(
+			
+				'cp_custom_quicktags',
+				plugin_dir_url( CP_PLUGIN_FILE ) . 'js/cp_quicktags.js',
+				array('quicktags'),
+				NULL, // no version
+				false // not in footer (but may need to be in WP 3.3)
+				
+			);
+			
+		}
 
 	}
 	
@@ -238,14 +289,14 @@ class CommentPressDisplay {
 		
 		
 		// construct path to admin.css
-		$filepath = TEMPLATEPATH . '/style/css/admin.css';
+		$filepath = get_template_directory() . '/style/css/admin.css';
 	
 		// is our stylesheet present?
 		if ( file_exists( $filepath ) ) {
 		
 			// add Admin UI stylesheet
 			$styles = '<!-- Commentpress Admin styles -->
-<link rel="stylesheet" type="text/css" media="screen" href="'.get_bloginfo('template_url') . '/style/css/admin.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="'.get_template_directory_uri().'/style/css/admin.css" />
 '."\n\n";
 
 		}
@@ -268,53 +319,11 @@ class CommentPressDisplay {
 	 * @todo: 
 	 *
 	 */
-	function get_styles() {
-		
-		// init
-		$styles = '';
-		
-		
-		
-		/*
-		// We should eventually use:
-		wp_enqueue_style( $handle, $src, $deps, $ver, $media );
-		
-		// always add jQuery UI
-		wp_enqueue_style( 'jquery.ui.all', $this->jquery_path.'theme/ui.all.css' );
-		*/
-
-
+	function get_frontend_styles() {
 		
 		// add jQuery UI stylesheet -> needed for resizable columns
-		$styles = '<!-- jQuery UI styles -->
-<link rel="stylesheet" type="text/css" media="screen" href="'.$this->jquery_path.'theme/ui.base.css" />
-'."\n\n";
+		wp_enqueue_style('jquery.ui.base', $this->jquery_path.'theme/ui.base.css' );
 		
-		
-		
-		// do we have a custom header bg colour?
-		if ( $this->parent_obj->db->option_get_header_bg() != $this->parent_obj->db->header_bg_colour ) {
-		
-			// echo inline style
-			echo '
-			
-<style type="text/css">
-	
-	#book_header {
-		background: #'.$this->parent_obj->db->option_get_header_bg().';
-	}
-
-</style>
-
-';
-		
-		}
-		
-		
-		
-		// --<
-		return $styles;
-			
 	}
 	
 	
@@ -418,35 +427,67 @@ class CommentPressDisplay {
 	 */
 	function get_javascript() {
 
-		// Is it one of our themes?
-		if ( $this->parent_obj->is_allowed_theme() ) {
+		// base url for the Commentpress parent theme
+		$_base = trailingslashit( get_template_directory_uri() );
 		
-			// base url
-			$_base = trailingslashit( get_bloginfo('template_url') );
+		// test whether we can find the scripts (ie, is this a true CP theme?)
+		$common = locate_template( array( 'style/js/cp_js_common.js' ), false );
+		
+		// well?
+		if ( $common AND file_exists( $common ) ) {
+		
+			// default to minified scripts
+			$debug_state = '';
+		
+			// target different scripts when debugging
+			if ( defined( 'WP_DEBUG' ) AND WP_DEBUG === true ) {
+			
+				// use uncompressed scripts
+				$debug_state = '.dev';
+			
+			}
+			
+			
 			
 			// enqueue common js
 			wp_enqueue_script(
 			
 				'cp_common', 
-				$_base.'style/js/cp_js_common.js', 
+				$_base.'style/js/cp_js_common'.$debug_state.'.js', 
 				array('jquery_commentpress')
 			
 			);
 			
-			// enqueue form js
-			wp_enqueue_script(
+			// test for buddypress special page
+			if ( $this->parent_obj->is_buddypress() AND $this->parent_obj->is_buddypress_special_page() ) {
 			
-				'cp_form', 
-				$_base.'style/js/cp_js_form.js', 
-				array('cp_common')
+				// skip custom addComment
 			
-			);
+			} else {
+				
+				// enqueue form js
+				wp_enqueue_script(
+				
+					'cp_form', 
+					$_base.'style/js/cp_js_form'.$debug_state.'.js', 
+					array('cp_common')
+				
+				);
+					
+			}
+				
+			// is this a CPT?
+			//$current_type = get_post_type();
+			//print_r( $current_type ); die();
 			
 			// get vars
-			$this->localise_js( $this->parent_obj->db->get_javascript_vars(), 'cp_common' );
+			$vars = $this->parent_obj->db->get_javascript_vars();
+			
+			// get vars
+			$this->localise_js( $vars, 'cp_common' );
 			
 		}
-	
+		
 	}
 	
 	
@@ -458,7 +499,7 @@ class CommentPressDisplay {
 	/** 
 	 * @description: get help text
 	 * @return HTML $help
-	 * @todo: 
+	 * @todo: translation
 	 *
 	 */
 	function get_help() {
@@ -510,39 +551,61 @@ HELPTEXT;
 	 * @todo:
 	 *
 	 */
-	function list_posts( $params = 'numberposts=-1&order=ASC' ) {
+	function list_posts( $params = 'numberposts=-1&order=DESC' ) {
 	
-		// declare access to post
-		global $post;
-		
-		/*
-		---------------------
-		Alternative approach:
-		---------------------
-		$postslist = get_posts( 'numberposts=-1' );
-		foreach ( $postslist AS $post ) { 
-			setup_postdata( $post );
-			echo 'list item in loop';
-		}
-		---------------------
-		*/
-		
-
-		
 		// get all posts
 		$posts = get_posts( $params );
 		
-		// run through them...
-		foreach( $posts AS $post ) {
+		// have we set the option?
+		$list_style = $this->parent_obj->db->option_get('cp_show_extended_toc');
+		
+		// if not set or set to 'off'
+		if ( $list_style === false OR $list_style == 'off' ) {
+		
+			// --------------------------
+			// old-style undecorated list
+			// --------------------------
+		
+			// run through them...
+			foreach( $posts AS $post ) {
+		
+				// get comment count for that post
+				$count = count( $this->parent_obj->db->get_approved_comments( $post->ID ) );
+		
+				// write list item
+				echo '<li class="title"><a href="'.get_permalink( $post->ID ).'">'.get_the_title( $post->ID ).' ('.$count.')</a></li>'."\n";
+			
+			}
+			
+		} else {
 	
-			// get comment count for that post
-			$count = count( $this->parent_obj->db->get_approved_comments( $post->ID ) );
-	
-			// write list item
-			echo '<li class="title"><a href="'.get_permalink().'">'.the_title('','',false).' ('.$count.')</a></li>'."\n";
+			// ------------------------
+			// new-style decorated list
+			// ------------------------
+		
+			// run through them...
+			foreach( $posts AS $post ) {
+			
+				//print_r( $post ); die();
+				//setup_postdata( $post );
+		
+				// get comment count for that post
+				$count = count( $this->parent_obj->db->get_approved_comments( $post->ID ) );
+		
+				// write list item
+				echo '<li class="title">
+				<div class="post-identifier">
+				'.get_avatar( $post->post_author, 32 ).'
+				<cite class="fn">'.get_the_author_meta( 'display_name', $post->post_author ).'</cite>
+				<p class="post_activity_date">'.get_the_time('l, F jS, Y').'</p>
+				</div>
+				<a href="'.get_permalink( $post->ID ).'" class="post_activity_link">'.get_the_title( $post->ID ).' ('.$count.')</a>
+				</li>'."\n";
+			
+			}
 		
 		}
-
+		
 	}
 	
 	
@@ -558,6 +621,56 @@ HELPTEXT;
 	 */
 	function list_pages() {
 	
+		/* 
+		Question: do we want to use WP menus? And if so, how?
+		
+		Currently, we're using wp_list_pages(), so let's try wp_page_menu() first
+		
+		
+		
+		// If we set the theme to use wp_nav_menu(), we need to register it
+		register_nav_menu( 'primary', __( 'Primary Menu', 'twentyeleven' ) );
+	
+		Our navigation menu. If one isn't filled out, wp_nav_menu falls back to 
+		wp_page_menu. The menu assiged to the primary position is the one used. If 
+		none is assigned, the menu with the lowest ID is used. 
+
+		//wp_nav_menu( array( 'theme_location' => 'primary' ) );
+		
+		// set list pages defaults
+		$args = array(
+
+			'sort_column' => 'menu_order, post_title',
+			'menu_class' => 'menu',
+			'include' => '',
+			'exclude' => '',
+			'echo' => true,
+			'show_home' => false,
+			'link_before' => '',
+			'link_after' => ''
+
+		);
+		*/
+		
+		
+		
+		// test for custom menu
+		if ( has_nav_menu( 'toc' ) ) {
+			
+			// try and use it
+			wp_nav_menu( array( 
+				
+				'theme_location' => 'toc',
+				'echo' => true,
+				
+			) );
+			
+			return;
+		
+		}
+		
+		
+		
 		// get page display option
 		$depth = $this->parent_obj->db->option_get('cp_show_subpages');
 		
@@ -592,7 +705,8 @@ HELPTEXT;
 		
 		// use Wordpress function to echo
 		wp_list_pages( $defaults );
-		
+
+
 		
 		
 		/*
@@ -669,7 +783,7 @@ HELPTEXT;
 			$are_is = 'is';
 		}
 		
-		// define small
+		// define small (needs _n() translation?
 		$small = '<small class="comment_count" title="There '.$are_is.' '.$comment_count.' comment'.$s.' written for this paragraph">'.(string) $comment_count.'</small>';
 
 		
@@ -680,7 +794,7 @@ HELPTEXT;
 		*/
 		
 		// define more accessable HTML for comment icon
-		$comment_icon = '<span class="commenticonbox"><a id="'.$text_signature.'" class="para_permalink'.$class.'" href="#'.$text_signature.'" title="Permalink for this paragraph">Permalink for this paragraph</a> '.$small.'</span>'."\n";
+		$comment_icon = '<span class="commenticonbox"><a id="'.$text_signature.'" class="para_permalink'.$class.'" href="#'.$text_signature.'" title="Permalink for this paragraph">'.__( 'Permalink for this paragraph', 'commentpress-plugin' ).'</a> '.$small.'</span>'."\n";
 		
 		
 		
@@ -810,7 +924,7 @@ HELPTEXT;
 	function get_minimise_all_button( $sidebar = 'comments' ) {
 	
 		// define minimise button
-		$tag = '<span id="cp_minimise_all_comments" title="Minimise all Comment Sections"></span>';
+		$tag = '<span id="cp_minimise_all_comments" title="'.__( 'Minimise all Comment Sections', 'commentpress-plugin' ).'"></span>';
 		
 		// --<
 		return $tag;
@@ -833,7 +947,7 @@ HELPTEXT;
 	function get_header_min_link() {
 	
 		// define minimise button
-		$link = '<li><a href="#" id="btn_header_min" class="css_btn" title="Minimise Header">Minimise Header</a></li>'."\n";
+		$link = '<li><a href="#" id="btn_header_min" class="css_btn" title="'.__( 'Minimise Header', 'commentpress-plugin' ).'">'.__( 'Minimise Header', 'commentpress-plugin' ).'</a></li>'."\n";
 		
 		
 		// --<
@@ -986,7 +1100,7 @@ HELPTEXT;
 	/** 
 	 * @description: returns the admin form HTML
 	 * @return string $admin_page
-	 * @todo: 
+	 * @todo: translation
 	 *
 	 */
 	function _get_admin_form() {
@@ -1134,7 +1248,18 @@ $this->_get_external_options().
 	<tr valign="top">
 		<th scope="row"><label for="cp_show_subpages">Show Sub-Pages</label></th>
 		<td><input id="cp_show_subpages" name="cp_show_subpages" value="1"  type="checkbox" '.( $this->parent_obj->db->option_get('cp_show_subpages') ? ' checked="checked"' : ''  ).' /></td>
-	</tr>' : '' );
+	</tr>' : '' ).'
+	
+	
+	<tr valign="top">
+		<th scope="row"><label for="cp_show_extended_toc">Appearance of TOC for posts</label></th>
+		<td><select id="cp_show_extended_toc" name="cp_show_extended_toc">
+				<option value="1">Extended information</option>
+				<option value="0" selected="selected">Just the title</option>
+			</select>
+		</td>
+	</tr>
+	';
 	
 	
 	
@@ -1414,7 +1539,7 @@ Below are extra options for changing how the theme looks.</p>
 
 
 	/** 
-	 * @description: returns the upgrade button for the admin form
+	 * @description: returns the upgrade details for the admin form
 	 * @return string $upgrade
 	 * @todo: 
 	 *
@@ -1425,6 +1550,26 @@ Below are extra options for changing how the theme looks.</p>
 		$upgrade = '';
 		
 		
+		
+		// do we have the option to choose the TOC layout (nnew in 3.3)?
+		if ( !$this->parent_obj->db->option_exists('cp_show_extended_toc') ) {
+		
+			// define upgrade
+			$upgrade .= '
+	<tr valign="top">
+		<th scope="row"><label for="cp_show_extended_toc">Appearance of TOC for posts</label></th>
+		<td><select id="cp_show_extended_toc" name="cp_show_extended_toc">
+				<option value="1">Show extended information</option>
+				<option value="0" selected="selected">Just title</option>
+			</select>
+		</td>
+	</tr>
+
+';
+
+		}
+		
+
 		
 		// do we have the option to set the comment editor?
 		if ( !$this->parent_obj->db->option_exists('cp_comment_editor') ) {
@@ -1914,6 +2059,24 @@ Below are extra options for changing how the theme looks.</p>
 			
 			}
 			
+			// try using code from http://code.google.com/p/php-mobile-detect/
+			include( plugin_dir_path( CP_PLUGIN_FILE ) . 'inc/Mobile_Detect.php' );
+			
+			// init
+			$detect = new Mobile_Detect();
+			
+			// is it mobile?
+			if ( $detect->isMobile() ) {
+			
+				// set flag
+				$this->is_mobile = true;
+
+			}
+			
+			/*
+			
+			// REPLACED
+			
 			// init mobile array
 			$mobiles = array(
 				'2.0 MMP',
@@ -1973,6 +2136,8 @@ Below are extra options for changing how the theme looks.</p>
 				}
 			
 			}
+			
+			*/
 			
 		}
 

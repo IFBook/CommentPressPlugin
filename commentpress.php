@@ -2,7 +2,7 @@
 ----------------------------------------------------------------
 Plugin Name: Commentpress
 Plugin URI: http://www.futureofthebook.org/commentpress/
-Description:  Commentpress allows readers to comment paragraph by paragraph in the margins of a text. You can use it to annotate, gloss, workshop, debate and more!
+Description:  Commentpress allows readers to comment paragraph by paragraph in the margins of a text. You can use it to annotate, gloss, workshop, debate and more! <strong>For Wordpress Multisite:</strong> do not network activate this plugin. For more information see the plugin docs.
 Author: Institute for the Future of the Book
 Version: 3.2.1
 Author URI: http://www.futureofthebook.org
@@ -14,8 +14,8 @@ Mark James, for the icon http://www.famfamfam.com/lab/icons/silk/
 ----------------------------------------------------------------
 */
 
-// set flag to activate Commentpress theme in multisite-sitewide context
-define( 'CP_ACTIVATE_THEME', true );
+// set flag to activate Commentpress theme in multisite force-activated context
+define( 'CP_ACTIVATE_THEME', false );
 
 
 
@@ -26,7 +26,7 @@ define( 'CP_ACTIVATE_THEME', true );
 // ----------------------------------------------------------------
 
 // set version
-define( 'CP_VERSION', '3.2.1' );
+define( 'CP_VERSION', '3.3' );
 
 // set testing flag
 define( 'CP_PLUGIN_TESTING', true );
@@ -47,9 +47,14 @@ $wp_content_dirname = trailingslashit( $tmp_array[1] );
 
 
 
-// ----------------------------------------------------------------
-// Begin by establishing Plugin Context
-// ----------------------------------------------------------------
+/*
+----------------------------------------------------------------
+Begin by establishing Plugin Context
+----------------------------------------------------------------
+NOTE: needs an audit because it assumes dir names. Also, it may be that:
+plugin_dir_url( CP_PLUGIN_FILE ) fails in force-activated context
+----------------------------------------------------------------
+*/
 
 // is our class file in the same directory as this file?
 if( is_file( dirname(__FILE__) . '/class_commentpress.php' ) ) {
@@ -141,9 +146,11 @@ if ( basename( dirname(__FILE__) ) == 'mu-plugins' ) {
 
 
 
-// ----------------------------------------------------------------
-// Init plugin
-// ----------------------------------------------------------------
+/*
+----------------------------------------------------------------
+Init plugin
+----------------------------------------------------------------
+*/
 
 // do we have our class?
 if ( !class_exists( 'CommentPress' ) ) {

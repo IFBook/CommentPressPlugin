@@ -49,6 +49,12 @@ class CommentPress {
 	// options page
 	var $options_page;
 	
+	// buddypress present
+	var $buddypress = false;
+	
+	// bp-groupblog present
+	var $bp_groupblog = false;
+	
 
 
 
@@ -162,18 +168,76 @@ class CommentPress {
 	
 		
 	/** 
-	 * @description: checks for a valid user and redirects in GC
+	 * @description: loads translation, if present
 	 * @todo: 
 	 *
 	 */
-	function check_user_login() {
+	function translation() {
+		
+		// only use, if we have it...
+		if( function_exists('load_plugin_textdomain') ) {
 	
-		// do we have the object?
-		if ( is_object( $this->auth ) ) {
+			// not used, as there are no translations as yet
+			load_plugin_textdomain(
+			
+				// unique name
+				'commentpress-plugin', 
+				
+				// deprecated argument
+				false,
+				
+				// path to directory containing translation files
+				plugin_dir_path( CP_PLUGIN_FILE ) . 'languages/'
+	
+			);
+			
+		}
 		
-			// check auth
-			$this->auth->check_auth();
+	}
+	
+	
+	
+	
+	
+
+
+	/**
+	 * @description: configure when BuddyPress is active
+	 * @todo: 
+	 *
+	 */
+	function buddypress_init() {
+	
+		// for BuddyPress integration...
+		if ( defined( 'BP_VERSION' ) ) {
 		
+			// we've got BuddyPress installed
+			$this->buddypress = true;
+			
+		}
+	
+		// for bp-groupblog integration...
+		if ( 
+			
+			// require multisite
+			is_multisite()
+			
+			// and groups
+			AND bp_is_active( 'groups' )
+			
+			// and bp-groupblog
+			AND defined( 'BP_GROUPBLOG_IS_INSTALLED' )
+			
+		) {
+		
+			// check if this blog is a group blog...
+			if ( !empty( bp_get_groupblog_id() ) ) {
+
+				// okay, we're properly configured
+				$this->bp_groupblog = true;
+				
+			}
+			
 		}
 	
 	}
@@ -183,7 +247,68 @@ class CommentPress {
 	
 	
 	
+	
+	/**
+	 * @description: is BuddyPress active?
+	 * @todo: 
+	 *
+	 */
+	function is_buddypress() {
+	
+		// --<
+		return $this->buddypress;
+	
+	}
+	
+	
+	
+	
+	
+	
+	
+	/**
+	 * @description: is this a BuddyPress Group Blog?
+	 * @todo: 
+	 *
+	 */
+	function is_groupblog() {
+	
+		// --<
+		return $this->bp_groupblog;
+	
+	}
+	
+	
+	
+	
+	
+	
+	
+	/**
+	 * @description: is this a BuddyPress "special page" - a component homepage?
+	 * @todo: 
+	 *
+	 */
+	function is_buddypress_special_page() {
 		
+		// kick out if not BP
+		if ( !$this->is_buddypress() ) {
+		
+			return false;
+			
+		}
+		
+		// let's see...
+		return bp_current_component();
+	
+	}
+	
+	
+	
+	
+	
+	
+	
 	/** 
 	 * @description: appends option to admin menu
 	 * @todo: 
@@ -202,11 +327,13 @@ class CommentPress {
 				
 				// insert item in relevant menu
 				$this->options_page = add_options_page(
-					'Commentpress Settings', 
-					'Commentpress', 
+				
+					__( 'Commentpress Settings', 'commentpress-plugin' ), 
+					__( 'Commentpress', 'commentpress-plugin' ), 
 					'manage_options', 
 					'cp_admin_page', 
 					array( &$this, 'options_page' )
+					
 				);
 				
 				//print_r( $this->options_page );die();
@@ -251,6 +378,24 @@ class CommentPress {
 			// use method in this class
 			$this->options_help( &$screen );
 			
+		}
+		
+		// do we have a custom header bg colour?
+		if ( $this->db->option_get_header_bg() != $this->db->header_bg_colour ) {
+		
+			// echo inline style
+			echo '
+			
+<style type="text/css">
+	
+	#book_header {
+		background: #'.$this->db->option_get_header_bg().';
+	}
+
+</style>
+
+';
+		
 		}
 		
 	}
@@ -322,60 +467,69 @@ class CommentPress {
 	
 	
 	/** 
-	 * @description: loads translation, if present
+	 * @description: add scripts needed across all WP admin pages
 	 * @todo: 
 	 *
 	 */
-	function translation() {
-		
-		// only use, if we have it...
-		if( function_exists('load_plugin_textdomain') ) {
+	function enqueue_admin_scripts() {
 	
-			// not used, as there are no translations as yet
-			load_plugin_textdomain(
-			
-				'commentpress_textdomain',
-				CP_PLUGIN_ABS_PATH, 
-				dirname( plugin_basename(__FILE__) )
-				
-			);
-			
-		}
+		// add quicktag button to page editor
+		$this->display->get_custom_quicktags();
 		
 	}
 	
 	
 	
 	
-	
-
-
+		
+		
+		
 	/** 
 	 * @description: adds script libraries
 	 * @todo: 
 	 *
 	 */
-	function script_libs() {
+	function enqueue_scripts() {
 		
 		// don't include in admin or wp-login.php
-		if ( !is_admin() AND $GLOBALS['pagenow'] != 'wp-login.php' ) {
+		if ( is_admin() OR ( isset( $GLOBALS['pagenow'] ) AND 'wp-login.php' == $GLOBALS['pagenow'] ) ) {
 		
-			// add jQuery libraries
-			$this->display->get_jquery();
+			return;
 			
-			// if comments are enabled on this post/page
-			if ( $this->db->comments_enabled() ) {
-
-				// add tinyMCE scripts
-				$this->display->get_tinymce();
-				
-			}
-		
-			// add Table of Contents javascript files
-			$this->display->get_javascript();
-		
 		}
 		
+		// add jQuery libraries
+		$this->display->get_jquery();
+		
+		// if comments are enabled on this post/page
+		if ( $this->db->comments_enabled() ) {
+
+			// add tinyMCE scripts
+			$this->display->get_tinymce();
+			
+		}
+	
+		// add Table of Contents javascript files
+		$this->display->get_javascript();
+	
+	}
+	
+	
+	
+	
+		
+		
+		
+	/** 
+	 * @description: adds CSS
+	 * @todo: 
+	 *
+	 */
+	function enqueue_styles() {
+		
+		// add plugin styles
+		$this->display->get_frontend_styles();
+	
 	}
 	
 	
@@ -419,9 +573,6 @@ class CommentPress {
 			
 		}
 	
-		// add plugin styles
-		echo $this->display->get_styles();
-	
 	}
 	
 	
@@ -453,6 +604,21 @@ class CommentPress {
 		
 		
 		
+		// test for buddypress special page (compat with BP Docs)
+		if ( $this->is_buddypress() ) {
+			
+			// is it a component homepage?
+			if ( $this->is_buddypress_special_page() ) {
+			
+				// --<
+				return $content;
+				
+			}
+			
+		}
+
+
+				
 		// only parse posts or pages...	
 		if( ( is_single() OR is_page() OR is_attachment() ) AND !$this->db->is_special_page() ) {
 		
@@ -473,7 +639,7 @@ class CommentPress {
 			// if it hasn't...
 			if ( !$has_quicktag ) {
 			
-				// set global
+				// set constant - okay, since we never return here
 				define( 'CP_BLOCK', 'tag' );
 			
 				// filter content by <p>, <ul> and <ol> tags
@@ -481,7 +647,7 @@ class CommentPress {
 				
 			} else {
 			
-				// set global
+				// set constant
 				define( 'CP_BLOCK', 'block' );
 			
 				// filter content by <!--commentblock--> quicktags
@@ -766,7 +932,7 @@ class CommentPress {
 		add_meta_box(
 		
 			'cp_page_options', 
-			__( 'Commentpress Options', 'commentpress_textdomain' ), 
+			__( 'Commentpress Options', 'commentpress-plugin' ), 
 			array( &$this, 'custom_box' ),
 			'page',
 			'side'
@@ -804,7 +970,7 @@ class CommentPress {
 		// --------------------------------------------------------------
 		
 		// show a title
-		echo '<p><strong><label for="cp_title_visibility">' . __("Page Title Visibility", 'commentpress_textdomain' ) . '</label></strong></p>';
+		echo '<p><strong><label for="cp_title_visibility">' . __( 'Page Title Visibility' , 'commentpress-plugin' ) . '</label></strong></p>';
 		
 		// set key
 		$key = '_cp_title_visibility';
@@ -824,8 +990,8 @@ class CommentPress {
 		echo '
 <p>
 <select id="cp_title_visibility" name="cp_title_visibility">
-	<option value="show" '.(($viz == 'show') ? ' selected="selected"' : '').'>Show page title</option>
-	<option value="hide" '.(($viz == 'hide') ? ' selected="selected"' : '').'>Hide page title</option>
+	<option value="show" '.(($viz == 'show') ? ' selected="selected"' : '').'>'.__('Show page title', 'commentpress-plugin').'</option>
+	<option value="hide" '.(($viz == 'hide') ? ' selected="selected"' : '').'>'.__('Hide page title', 'commentpress-plugin').'</option>
 </select>
 </p>
 ';
@@ -847,7 +1013,7 @@ class CommentPress {
 		) { // -->
 		
 			// label
-			echo '<p><strong><label for="cp_number_format">' . __("Page Number Format", 'commentpress_textdomain' ) . '</label></strong></p>';
+			echo '<p><strong><label for="cp_number_format">' . __('Page Number Format', 'commentpress-plugin' ) . '</label></strong></p>';
 			
 			// set key
 			$key = '_cp_number_format';
@@ -869,8 +1035,8 @@ class CommentPress {
 			echo '
 <p>
 <select id="cp_number_format" name="cp_number_format">
-	<option value="arabic" '.(($format == 'arabic') ? ' selected="selected"' : '').'>Arabic numerals</option>
-	<option value="roman" '.(($format == 'roman') ? ' selected="selected"' : '').'>Roman numerals</option>
+	<option value="arabic" '.(($format == 'arabic') ? ' selected="selected"' : '').'>'.__('Arabic numerals', 'commentpress-plugin' ).'</option>
+	<option value="roman" '.(($format == 'roman') ? ' selected="selected"' : '').'>'.__('Roman numerals', 'commentpress-plugin' ).'</option>
 </select>
 </p>
 ';
@@ -887,7 +1053,7 @@ class CommentPress {
 		if ( $post->ID == $this->db->option_get( 'cp_welcome_page' ) ) {
 		
 			// label
-			echo '<p><strong><label for="cp_page_layout">' . __("Page Layout", 'commentpress_textdomain' ) . '</label></strong></p>';
+			echo '<p><strong><label for="cp_page_layout">' . __('Page Layout', 'commentpress-plugin' ) . '</label></strong></p>';
 			
 			// set key
 			$key = '_cp_page_layout';
@@ -907,8 +1073,8 @@ class CommentPress {
 			echo '
 <p>
 <select id="cp_page_layout" name="cp_page_layout">
-	<option value="text" '.(($value == 'text') ? ' selected="selected"' : '').'>Standard</option>
-	<option value="wide" '.(($value == 'wide') ? ' selected="selected"' : '').'>Wide</option>
+	<option value="text" '.(($value == 'text') ? ' selected="selected"' : '').'>'.__('Standard', 'commentpress-plugin' ).'</option>
+	<option value="wide" '.(($value == 'wide') ? ' selected="selected"' : '').'>'.__('Wide', 'commentpress-plugin' ).'</option>
 </select>
 </p>
 ';
@@ -935,7 +1101,7 @@ class CommentPress {
 		if ($screen == 'cp_admin_page') {
 		
 			// get help text
-			$text = '<h5>Commentpress Help</h5>';
+			$text = '<h5>'.__('Commentpress Help', 'commentpress-plugin' ).'</h5>';
 			$text .= $this->display->get_help();
 			
 		}
@@ -972,7 +1138,7 @@ class CommentPress {
 		$screen->add_help_tab( array(
 		
 			'id'      => 'commentpress-base',
-			'title'   => __('Commentpress Help', 'commentpress_textdomain'),
+			'title'   => __('Commentpress Help', 'commentpress-plugin'),
 			'content' => $this->display->get_help(),
 			
 		));
@@ -984,51 +1150,6 @@ class CommentPress {
 	
 	
 	
-	
-		
-		
-		
-	/** 
-	 * @description: adds quicktag button to page editor
-	 * @todo: 
-	 *
-	 */
-	function commentblock_quicktag_button() {
-	
-		// palm off on display
-		$this->display->get_custom_quicktags();
-		
-	}
-	
-	
-	
-	
-		
-		
-		
-	/** 
-	 * @description: adds quicktag button to page editor in WP 3.3
-	 * @todo: 
-	 *
-	 */
-	function commentblock_quicktag_button_print() {
-	
-		// palm off on display
-		$script = <<<QTAG
-<script type='text/javascript'>
-/* <![CDATA[ */
-console.log(QTags);
-QTags.addButton( 'commentblock', 'c-block', '\\n<!--commentblock-->\\n' );
-/* ]]> */
-</script>
-QTAG;
-		
-		echo $script;
-		
-	}
-	
-	
-
 	
 		
 		
@@ -1284,27 +1405,41 @@ QTAG;
 			switch( $page_type ) {
 				
 				case 'cp_welcome_page': 
-					$_link_title = 'Title Page'; $_button = 'cover'; break;
+					$_link_title = __( 'Title Page', 'commentpress-plugin' );
+					$_button = 'cover'; 
+					break;
 					
 				case 'cp_all_comments_page': 
-					$_link_title = 'All Comments'; $_button = 'allcomments'; break;
+					$_link_title = __( 'All Comments', 'commentpress-plugin' ); 
+					$_button = 'allcomments'; break;
 					
 				case 'cp_general_comments_page': 
-					$_link_title = 'General Comments'; $_button = 'general'; break;
+					$_link_title = __( 'General Comments', 'commentpress-plugin' );
+					$_button = 'general'; break;
 					
 				case 'cp_blog_page': 
-					$_link_title = 'Blog'; $_button = 'blog'; break;
+					$_link_title = __( 'Blog', 'commentpress-plugin' );
+					$_button = 'blog'; break;
 					
+				case 'cp_blog_archive_page': 
+					$_link_title = __( 'Blog Archive', 'commentpress-plugin' );
+					$_button = 'archive'; break;
+
 				case 'cp_comments_by_page': 
-					$_link_title = 'Comments by Commenter'; $_button = 'members'; break;
+					$_link_title = __( 'Comments by Commenter', 'commentpress-plugin' );
+					$_button = 'members'; break;
 					
 				default: 
-					$_link_title = 'Members'; $_button = 'members';
+					$_link_title = __( 'Members', 'commentpress-plugin' );
+					$_button = 'members';
 			
 			}
 			
+			// let plugins override titles
+			$_title = apply_filters( 'commentpress_page_link_title', $_link_title );
+			
 			// show link
-			$link = '<li><a href="'.$_url.'" id="btn_'.$_button.'" class="css_btn" title="'.$_link_title.'">'.$_link_title.'</a></li>'."\n";
+			$link = '<li><a href="'.$_url.'" id="btn_'.$_button.'" class="css_btn" title="'.$_title.'">'.$_title.'</a></li>'."\n";
 		
 		}
 		
@@ -1517,8 +1652,30 @@ QTAG;
 	 */
 	function get_default_sidebar() {
 	
+		// get CPTs
+		//$_types = $this->_get_commentable_cpts();
+		
+		// testing what we do with CPTs...
+		//if ( is_singular() OR is_singular( $_types ) ) {
+		
+		
+		
+		// test for buddypress special page
+		if ( $this->is_buddypress() ) {
+			
+			// is it a component homepage?
+			if ( $this->is_buddypress_special_page() ) {
+			
+				return 'toc';
+			
+			}
+			
+		}
+		
+
+
 		// is it a commentable page?
-		if ( is_single() OR is_page() OR is_attachment() ) {
+		if ( is_singular() ) {
 		
 			// some people have reported that db is not an object at this point -
 			// though I cannot figure out how this might be occurring - so we
@@ -1539,13 +1696,17 @@ QTAG;
 				}
 				
 			}
-	
-		// test for Archive Sidebar (everything else)
+		
+		/*
+		// test for Archive Sidebar (dropped - moved to its own page)
 		} elseif ( is_home() OR is_category() OR is_tag() OR is_day() OR is_month() OR is_year() ) {
 		
 			// set default sidebar
 			return 'archive';
 			
+		}
+		*/
+		
 		}
 		
 
@@ -1689,18 +1850,8 @@ QTAG;
 				
 			}
 			
-			// there's a new quicktags script in 3.3
-			if ( version_compare( $wp_version, '3.2.99999', '>=' ) ) {
-				
-				// comment block quicktag (NEEDS TESTING!)
-				add_action('admin_print_footer_scripts', array( &$this, 'commentblock_quicktag_button_print' ), 20 );
-				
-			} else {
-			
-				// comment block quicktag
-				add_action('admin_print_scripts', array( &$this, 'commentblock_quicktag_button' ) );
-				
-			}
+			// comment block quicktag
+			add_action('admin_print_scripts', array( &$this, 'enqueue_admin_scripts' ) );
 			
 		} else {
 		
@@ -1708,7 +1859,10 @@ QTAG;
 			add_filter( 'wp_head', array( &$this, 'head' ) );
 			
 			// add script libraries
-			add_action( 'wp_print_scripts', array( &$this, 'script_libs' ) );
+			add_action( 'wp_print_scripts', array( &$this, 'enqueue_scripts' ) );
+			
+			// add CSS files
+			add_action( 'wp_enqueue_scripts', array( &$this, 'enqueue_styles' ) );
 			
 			// add template redirect for TOC behaviour
 			add_action( 'template_redirect', array( &$this, 'redirect_to_child' ) );
@@ -1726,7 +1880,7 @@ QTAG;
 			
 			// deactivation
 			register_deactivation_hook( CP_PLUGIN_FILE, array( &$this, 'deactivate' ) );
-		
+			
 		} else {
 		
 			// multisite-forced or multisite-sitewide activation
@@ -1739,7 +1893,7 @@ QTAG;
 			if ( CP_PLUGIN_CONTEXT == 'mu_sitewide' ) {
 			
 				// sitewide -> we hook into the blog activation process? nope...
-				add_action( 'wpmu_activate_blog', array( &$this, 'activate' ) );
+				//add_action( 'wpmu_activate_blog', array( &$this, 'activate' ) );
 				
 			} else {
 			
@@ -1770,6 +1924,9 @@ QTAG;
 			}
 		
 		}
+		
+		// enable BuddyPress functionality
+		add_action( 'bp_include', array( &$this, 'buddypress_init' ) );
 		
 	}
 	
@@ -2122,8 +2279,72 @@ QTAG;
 	 */
 	function _strip_shortcodes( $content ) {
 	
-		// look for < !--more--> span
-		if ( preg_match('/<span(.*?)?'.'><\/span><br \/>/', $content, $matches) ) {
+		/*
+		========================
+		Notes added: 08 Mar 2012
+		========================
+		
+		Here's how these quicktags work...
+		http://codex.wordpress.org/Customizing_the_Read_More
+		
+		
+		-------------
+		More Quicktag
+		-------------
+		
+		However, we cannot be sure of how the quicktags has been inserted. For example (1):
+		
+		<p>Here&#8217;s the teaser<br />
+		<span id="more-689"></span><br />
+		Here&#8217;s the rest of the post</p>
+		
+		Is the intention here that the teaser is a paragraph? I'd say so.
+		
+		What about (2):
+		
+		<p>Here&#8217;s the teaser</p>
+		<p><span id="more-689"></span></p>
+		<p>Here&#8217;s the rest of the post</p>
+		
+		I'd say the same as above.
+		
+		And then these two possibilities (3) & (4):
+		
+		<p>Here&#8217;s the teaser<span id="more-689"></span><br />
+		Here&#8217;s the rest of the post</p>
+		
+		<p>Here&#8217;s the teaser<br />
+		<span id="more-689"></span>Here&#8217;s the rest of the post</p>
+		
+		Now, for our purposes, since we currently use the excerpt in the blog archives, only
+		(1) and (2) are truly problematic - because they cause visible formatting. (3) & (4)
+		do not currently get filtered out because the spans are inline - but they do imply
+		that the content before and after should be self-contained. As a result, I think it
+		is probably better to add a statement about correct usage in to the help text so that
+		we can reliably parse the content.
+		
+		
+		-----------------
+		NoTeaser Quicktag
+		-----------------
+		
+		The Codex says "Include <!--noteaser--> in the post text, immediately after the <!--more-->"
+		which really means *on the same line*. When this is done, our content looks like this (1):
+		
+		<p><span id="more-691"></span><!--noteaser--></p>
+		<p>And this is the rest of the post blah</p>
+		
+		Or (2):
+		
+		<p><span id="more-691"></span><!--noteaser--><br />
+		And this is the rest of the post blah</p>
+		
+		*/
+	
+		//print_r( $content ); die();
+		
+		// look for inline <!--more--> span
+		if ( preg_match('/<span id="more-(.*?)?'.'><\/span><br \/>/', $content, $matches) ) {
 		
 			// derive list
 			$content = explode( $matches[0], $content, 2 );
@@ -2133,8 +2354,8 @@ QTAG;
 		
 		}
 		
-		// look for < !--more--> span
-		if ( preg_match('/<p><span(.*?)?'.'><\/span><\/p>/', $content, $matches) ) {
+		// look for separated <!--more--> span
+		if ( preg_match('/<p><span id="more-(.*?)?'.'><\/span><\/p>/', $content, $matches) ) {
 		
 			// derive list
 			$content = explode( $matches[0], $content, 2 );
@@ -2143,10 +2364,30 @@ QTAG;
 			$content = implode( '', $content );
 		
 		}
+				
+		// look for inline <!--more--> span correctly followed by <!--noteaser-->
+		if ( preg_match('/<span id="more-(.*?)?'.'><\/span><!--noteaser--><br \/>/', $content, $matches) ) {
 		
+			// derive list
+			$content = explode( $matches[0], $content, 2 );
+			
+			// rejoin to exclude shortcode
+			$content = implode( '', $content );
 		
+		}
+				
+		// look for separated <!--more--> span correctly followed by <!--noteaser-->
+		if ( preg_match('/<p><span id="more-(.*?)?'.'><\/span><!--noteaser--><\/p>/', $content, $matches) ) {
 		
-		// look for < !--noteaser--> comment
+			// derive list
+			$content = explode( $matches[0], $content, 2 );
+			
+			// rejoin to exclude shortcode
+			$content = implode( '', $content );
+		
+		}
+				
+		// look for incorrectly placed inline <!--noteaser--> comment
 		if ( preg_match('/<'.'!--noteaser--><br \/>/', $content, $matches) ) {
 		
 			// derive list
@@ -2159,7 +2400,7 @@ QTAG;
 		
 		
 		
-		// look for < !--noteaser--> comment
+		// look for incorrectly placed separated <!--noteaser--> comment
 		if ( preg_match('/<p><'.'!--noteaser--><\/p>/', $content, $matches) ) {
 		
 			// derive list
@@ -2177,8 +2418,9 @@ QTAG;
 			//$more_link_text = strip_tags(wp_kses_no_null(trim($matches[1])));
 		}
 		
-		
-		
+		//print_r( $content ); die();
+
+
 		// --<
 		return $content;
 
@@ -2468,7 +2710,67 @@ QTAG;
 	
 	
 	
+	/** 
+	 * @description: utility to check for commentable CPT
+	 * @return string $types array of post types
+	 * @todo: in development
+	 *
+	 */
+	function _get_commentable_cpts() {
+		
+		// init
+		$_types = false;
+		
 
+
+		// NOTE: exactly how do we support CPTs?
+		$args = array(
+			//'public'   => true,
+			'_builtin' => false
+		);
+		
+		$output = 'names'; // names or objects, note names is the default
+		$operator = 'and'; // 'and' or 'or'
+		
+		// get post types
+		$post_types = get_post_types( $args, $output, $operator ); 
+
+		// trace
+		//print_r( $post_types ); die();
+		
+		
+		
+		// did we get any?
+		if ( count( $post_types ) > 0 ) {
+		
+			// init as array
+			$_types = false;
+			
+			// loop
+			foreach ($post_types AS $post_type ) {
+			
+				// add name to array (is_singular expects this)
+				$_types[] = $post_type;
+				
+			}
+		
+		}
+
+		// trace
+		//print_r( $_types ); die();
+
+
+		// --<
+		return $_types;
+
+	}
+	
+	
+	
+	
+	
+	
+		
 //#################################################################
 
 

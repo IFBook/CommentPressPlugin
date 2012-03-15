@@ -40,9 +40,6 @@ class CommentPressDatabase {
 	// parent object reference
 	var $parent_obj;
 	
-	// commentpress version
-	var $version = '3.2';
-	
 	// options
 	var $cp_options = array();
 	
@@ -54,7 +51,10 @@ class CommentPressDatabase {
 	
 	// TOC chapters are pages by default
 	var $toc_chapter_is_page = 1;
-	
+
+	// Show extended TOC content for posts lists
+	var $show_extended_toc = 1;
+		
 	// TOC shows subpages by default
 	var $show_subpages = 1;
 	
@@ -155,7 +155,7 @@ class CommentPressDatabase {
 
 
 	/** 
-	 * @description: upgrade Commentpress plugin from 3.1 to higher
+	 * @description: upgrade Commentpress plugin from 3.1 to latest
 	 * @return boolean $result
 	 * @todo: 
 	 *
@@ -190,6 +190,19 @@ class CommentPressDatabase {
 			
 
 
+			// New in 3.3 - are we missing the cp_show_extended_toc option?
+			if ( !$this->option_exists( 'cp_show_extended_toc' ) ) {
+			
+				// get choice
+				$_choice = $wpdb->escape( $cp_show_extended_toc );
+			
+				// add chosen cp_comment_editor option
+				$this->option_set( 'cp_show_extended_toc', $_choice );
+				
+			}
+			
+
+
 			// are we missing the cp_comment_editor option?
 			if ( !$this->option_exists( 'cp_comment_editor' ) ) {
 			
@@ -197,7 +210,7 @@ class CommentPressDatabase {
 				$_choice = $wpdb->escape( $cp_comment_editor );
 			
 				// add chosen cp_comment_editor option
-				$this->option_set( 'cp_comment_editor', $_editor );
+				$this->option_set( 'cp_comment_editor', $_choice );
 				
 			}
 			
@@ -563,6 +576,7 @@ class CommentPressDatabase {
 			'cp_show_posts_or_pages_in_toc' => $this->toc_content,
 			'cp_toc_chapter_is_page' => $this->toc_chapter_is_page,
 			'cp_show_subpages' => $this->show_subpages,
+			'cp_show_extended_toc' => $this->show_extended_toc,
 			'cp_title_visibility' => $this->title_visibility,
 			'cp_header_bg_colour' => $this->header_bg_colour,
 			'cp_js_scroll_speed' => $this->js_scroll_speed,
@@ -645,6 +659,9 @@ class CommentPressDatabase {
 			$cp_create_pages = '';
 			$cp_delete_pages = '';
 			$cp_para_comments_live = '';
+			$cp_show_subpages = 0;
+			$cp_minimise_sidebar = 0;
+			$cp_para_comments_enabled = 0;
 
 			// get variables
 			extract( $_POST );
@@ -1047,7 +1064,7 @@ class CommentPressDatabase {
 		if ( $option_name == '' ) {
 		
 			// oops
-			die( 'You must supply an option to option_exists()' );
+			die( __( 'You must supply an option to option_exists()', 'commentpress-plugin' ) );
 		
 		}
 	
@@ -1071,7 +1088,7 @@ class CommentPressDatabase {
 		if ( $option_name == '' ) {
 		
 			// oops
-			die( 'You must supply an option to option_get()' );
+			die( __( 'You must supply an option to option_get()', 'commentpress-plugin' ) );
 		
 		}
 	
@@ -1095,7 +1112,7 @@ class CommentPressDatabase {
 		if ( $option_name == '' ) {
 		
 			// oops
-			die( 'You must supply an option to option_set()' );
+			die( __( 'You must supply an option to option_set()', 'commentpress-plugin' ) );
 		
 		}
 	
@@ -1103,7 +1120,7 @@ class CommentPressDatabase {
 		if ( !is_string( $option_name ) ) {
 		
 			// oops
-			die( 'You must supply the option as a string to option_set()' );
+			die( __( 'You must supply the option as a string to option_set()', 'commentpress-plugin' ) );
 		
 		}
 	
@@ -1127,7 +1144,7 @@ class CommentPressDatabase {
 		if ( $option_name == '' ) {
 		
 			// oops
-			die( 'You must supply an option to option_delete()' );
+			die( __( 'You must supply an option to option_delete()', 'commentpress-plugin' ) );
 		
 		}
 	
@@ -1151,7 +1168,7 @@ class CommentPressDatabase {
 		if ( $option_name == '' ) {
 		
 			// oops
-			die( 'You must supply an option to option_wp_exists()' );
+			die( __( 'You must supply an option to option_wp_exists()', 'commentpress-plugin' ) );
 		
 		}
 	
@@ -1185,7 +1202,7 @@ class CommentPressDatabase {
 		if ( $option_name == '' ) {
 		
 			// oops
-			die( 'You must supply an option to option_wp_get()' );
+			die( __( 'You must supply an option to option_wp_get()', 'commentpress-plugin' ) );
 		
 		}
 	
@@ -1209,7 +1226,7 @@ class CommentPressDatabase {
 		if ( $option_name == '' ) {
 		
 			// oops
-			die( 'You must supply an option to option_wp_set()' );
+			die( __( 'You must supply an option to option_wp_set()', 'commentpress-plugin' ) );
 		
 		}
 	
@@ -1454,7 +1471,21 @@ class CommentPressDatabase {
 	
 		// add comments open
 		global $post;
-		$vars['cp_comments_open'] = ( $post->comment_status == 'open' ) ? 'y' : 'n';
+		
+		// if we don't have a post (like on the 404 page)
+		if ( !is_object( $post ) ) {
+		
+			// comments must be closed
+			$vars['cp_comments_open'] = 'n';
+
+		} else {
+			
+			// check for post comment_status
+			$vars['cp_comments_open'] = ( $post->comment_status == 'open' ) ? 'y' : 'n';
+			
+		}
+		
+		
 		
 		// assume no admin bar
 		$vars['cp_wp_adminbar'] = 'n';
@@ -1462,9 +1493,52 @@ class CommentPressDatabase {
 		// are we showing the admin bar?
 		if ( function_exists( 'is_admin_bar_showing' ) AND is_admin_bar_showing() ) {
 			
-			// yikes, we have it...
+			// we have it...
 			$vars['cp_wp_adminbar'] = 'y';
 
+		}
+		
+		// are we logged in AND in a BuddyPress scenario?
+		if ( is_user_logged_in() AND $this->parent_obj->is_buddypress() ) {
+		
+			// regardless of version, settings can be made in bp-custom.php
+			if ( defined( 'BP_DISABLE_ADMIN_BAR' ) AND BP_DISABLE_ADMIN_BAR ) {
+			
+				// we've killed both admin bars
+				$vars['cp_bp_adminbar'] = 'n';
+				$vars['cp_wp_adminbar'] = 'n';
+	
+			}
+			
+			// check for BP version (1.6 uses the WP admin bar instead of a custom one)
+			if ( version_compare( BP_VERSION, '1.6', '<' ) ) {
+				
+				// but, this can already be overridden in bp-custom.php
+				// NOTE: can we override this *back* in 1.6?
+				if ( defined( 'BP_USE_WP_ADMIN_BAR' ) AND BP_USE_WP_ADMIN_BAR ) {
+					
+					// not present
+					$vars['cp_bp_adminbar'] = 'n';
+					$vars['cp_wp_adminbar'] = 'y';
+					
+				} else {
+				
+					// let our javascript know
+					$vars['cp_bp_adminbar'] = 'y';
+				
+					// recheck 'BP_DISABLE_ADMIN_BAR'
+					if ( defined( 'BP_DISABLE_ADMIN_BAR' ) AND BP_DISABLE_ADMIN_BAR ) {
+					
+						// we've killed both admin bars
+						$vars['cp_bp_adminbar'] = 'n';
+						$vars['cp_wp_adminbar'] = 'n';
+			
+					}
+				
+				}
+				
+			}
+			
 		}
 		
 		// add comments-on-paragraphs flag
@@ -1529,6 +1603,19 @@ class CommentPressDatabase {
 			// add special page var
 			$vars['cp_special_page'] = ( $this->is_special_page() ) ? '1' : '0';
 	
+			// are we in a BuddyPress scenario?
+			if ( $this->parent_obj->is_buddypress() ) {
+				
+				// is it a component homepage?
+				if ( $this->parent_obj->is_buddypress_special_page() ) {
+				
+					// treat them the way we do ours
+					$vars['cp_special_page'] = '1';
+				
+				}
+				
+			}
+			
 			// get path
 			$url_info = parse_url( get_option('siteurl') );
 			
@@ -1543,7 +1630,7 @@ class CommentPressDatabase {
 			$vars['cp_multipage_page'] = ( !empty( $page ) ) ? $page : 0;
 			
 			// add path to template directory
-			$vars['cp_template_dir'] = get_bloginfo('template_url');
+			$vars['cp_template_dir'] = get_template_directory_uri();
 			
 			// add path to plugin directory
 			$vars['cp_plugin_dir'] = WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__));
@@ -1623,6 +1710,9 @@ class CommentPressDatabase {
 			// create blog page
 			$special_pages[] = $this->_create_blog_page();
 			
+			// create blog archive page
+			$special_pages[] = $this->_create_blog_archive_page();
+			
 			// create TOC page -> a convenience, let's us define a logo as attachment
 			$special_pages[] = $this->_create_toc_page();
 
@@ -1695,6 +1785,12 @@ class CommentPressDatabase {
 				
 					// create blog page
 					$new_id = $this->_create_blog_page();
+					break;
+			
+				case 'blog_archive':
+				
+					// create blog page
+					$new_id = $this->_create_blog_archive_page();
 					break;
 			
 				case 'toc':
@@ -1774,6 +1870,7 @@ class CommentPressDatabase {
 				$this->option_delete( 'cp_special_pages' );
 				$this->option_delete( 'cp_welcome_page' );
 				$this->option_delete( 'cp_blog_page' );
+				$this->option_delete( 'cp_blog_archive_page' );
 				$this->option_delete( 'cp_general_comments_page' );
 				$this->option_delete( 'cp_all_comments_page' );
 				$this->option_delete( 'cp_comments_by_page' );
@@ -1868,6 +1965,12 @@ class CommentPressDatabase {
 				
 					break;
 			
+				case 'blog_archive':
+				
+					// set flag
+					$flag = 'cp_blog_archive_page';
+					break;
+			
 				case 'toc':
 				
 					// set flag
@@ -1878,7 +1981,7 @@ class CommentPressDatabase {
 			
 
 
-			// get welcome/title page
+			// get page id
 			$page_id = $this->option_get( $flag );
 			
 			// kick out if it doesn't exist
@@ -2352,7 +2455,7 @@ class CommentPressDatabase {
 		
 		// add post-specific stuff
 		$title['post_title'] = 'Title Page';
-		$title['post_content'] = 'This is your title page. Edit it to suit your needs. It has been automatically set as your homepage but if you want another page as your homepage, set it in <em>Wordpress</em> &#8594; <em>Settings</em> &#8594; <em>Reading</em>.';
+		$title['post_content'] = __( 'This is your title page. Edit it to suit your needs. It has been automatically set as your homepage but if you want another page as your homepage, set it in <em>Wordpress</em> &#8594; <em>Settings</em> &#8594; <em>Reading</em>.', 'commentpress-plugin' );
 		$title['page_template'] = 'welcome.php';
 
 		// Insert the post into the database
@@ -2398,8 +2501,8 @@ class CommentPressDatabase {
 		);
 
 		// add post-specific stuff
-		$general_comments['post_title'] = 'General Comments';
-		$general_comments['post_content'] = 'Do not delete this page. Page content is generated with a custom template.';
+		$general_comments['post_title'] = __( 'General Comments', 'commentpress-plugin' );
+		$general_comments['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
 		$general_comments['page_template'] = 'comments-general.php';
 
 		// Insert the post into the database
@@ -2441,8 +2544,8 @@ class CommentPressDatabase {
 		);
 
 		// add post-specific stuff
-		$all_comments['post_title'] = 'All Comments';
-		$all_comments['post_content'] = 'Do not delete this page. Page content is generated with a custom template.';
+		$all_comments['post_title'] = __( 'All Comments', 'commentpress-plugin' );
+		$all_comments['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
 		$all_comments['page_template'] = 'comments-all.php';
 
 		// Insert the post into the database
@@ -2484,8 +2587,8 @@ class CommentPressDatabase {
 		);
 		
 		// add post-specific stuff
-		$group['post_title'] = 'Comments by Commenter';
-		$group['post_content'] = 'Do not delete this page. Page content is generated with a custom template.';
+		$group['post_title'] = __( 'Comments by Commenter', 'commentpress-plugin' );
+		$group['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
 		$group['page_template'] = 'comments-by.php';
 
 		// Insert the post into the database
@@ -2527,8 +2630,8 @@ class CommentPressDatabase {
 		);
 		
 		// add post-specific stuff
-		$blog['post_title'] = 'Blog';
-		$blog['post_content'] = 'Do not delete this page. Page content is generated with a custom template.';
+		$blog['post_title'] = __( 'Blog', 'commentpress-plugin' );
+		$blog['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
 		$blog['page_template'] = 'blog.php';
 
 		// Insert the post into the database
@@ -2539,6 +2642,49 @@ class CommentPressDatabase {
 
 		// set Wordpress internal page reference
 		$this->_store_wordpress_option( 'page_for_posts', $blog_id );
+
+		// --<
+		return $blog_id;
+
+	}
+	
+	
+	
+	
+	
+
+
+	/** 
+	 * @description: create "blog archive" page
+	 * @todo: 
+	 *
+	 */
+	function _create_blog_archive_page() {
+
+		// define blog page
+		$blog = array(
+			'post_status' => 'publish',
+			'post_type' => 'page',
+			'post_parent' => 0,
+			'comment_status' => 'closed',
+			'ping_status' => 'closed',
+			'to_ping' => '', // quick fix for Windows
+			'pinged' => '', // quick fix for Windows
+			'post_content_filtered' => '', // quick fix for Windows
+			'post_excerpt' => '', // quick fix for Windows
+			'menu_order' => 0
+		);
+		
+		// add post-specific stuff
+		$blog['post_title'] = __( 'Blog Archive', 'commentpress-plugin' );
+		$blog['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
+		$blog['page_template'] = 'archive.php';
+
+		// Insert the post into the database
+		$blog_id = wp_insert_post( $blog );
+		
+		// store the option
+		$this->option_set( 'cp_blog_archive_page', $blog_id );
 
 		// --<
 		return $blog_id;
@@ -2573,8 +2719,8 @@ class CommentPressDatabase {
 		);
 		
 		// add post-specific stuff
-		$toc['post_title'] = 'Table of Contents';
-		$toc['post_content'] = 'Do not delete this page. Page content is generated with a custom template.';
+		$toc['post_title'] = __( 'Table of Contents', 'commentpress-plugin' );
+		$toc['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
 		$toc['page_template'] = 'toc.php';
 
 		// Insert the post into the database
