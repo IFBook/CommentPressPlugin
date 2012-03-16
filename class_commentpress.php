@@ -717,7 +717,7 @@ class CommentPress {
 
 	/** 
 	 * @description: retrieves minimise button
-	 * @param: string $sidebar type of sidebar (comments, toc, archive)
+	 * @param: string $sidebar type of sidebar (comments, toc, activity)
 	 * @return string $result HTML for minimise button
 	 * @todo: 
 	 *
@@ -749,7 +749,7 @@ class CommentPress {
 
 	/** 
 	 * @description: retrieves minimise all button
-	 * @param: string $sidebar type of sidebar (comments, toc, archive)
+	 * @param: string $sidebar type of sidebar (comments, toc, activity)
 	 * @return string $result HTML for minimise button
 	 * @todo: 
 	 *
@@ -1669,14 +1669,6 @@ class CommentPress {
 	 */
 	function get_default_sidebar() {
 	
-		// get CPTs
-		//$_types = $this->_get_commentable_cpts();
-		
-		// testing what we do with CPTs...
-		//if ( is_singular() OR is_singular( $_types ) ) {
-		
-		
-		
 		// test for buddypress special page
 		if ( $this->is_buddypress() ) {
 			
@@ -1691,6 +1683,12 @@ class CommentPress {
 		
 
 
+		// get CPTs
+		//$_types = $this->_get_commentable_cpts();
+		
+		// testing what we do with CPTs...
+		//if ( is_singular() OR is_singular( $_types ) ) {
+		
 		// is it a commentable page?
 		if ( is_singular() ) {
 		
@@ -1714,20 +1712,10 @@ class CommentPress {
 				
 			}
 		
-		/*
-		// test for Archive Sidebar (dropped - moved to its own page)
-		} elseif ( is_home() OR is_category() OR is_tag() OR is_day() OR is_month() OR is_year() ) {
-		
-			// set default sidebar
-			return 'archive';
-			
-		}
-		*/
-		
 		}
 		
 
-
+		
 		// --<
 		return 'toc';
 		

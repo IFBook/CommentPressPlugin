@@ -610,10 +610,10 @@ Array.prototype.remove_item = function( item ) {
 		}
 	
 		// if comments
-		if ( cp_default_sidebar == 'archive' ) {
-			name = 'archive';
+		if ( cp_default_sidebar == 'activity' ) {
+			name = 'activity';
 			if ( cp_toc_on_top == 'y' ) {
-				//console.log( 'toc on archive_sidebar' );
+				//console.log( 'toc on activity_sidebar' );
 				name = 'toc';
 			}
 		}

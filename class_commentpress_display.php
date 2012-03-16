@@ -591,12 +591,38 @@ HELPTEXT;
 		
 				// get comment count for that post
 				$count = count( $this->parent_obj->db->get_approved_comments( $post->ID ) );
+				
+				// in BP, use its function
+				if ( $this->parent_obj->is_buddypress() ) {
+				
+					// buddypress link ($no_anchor = null, $just_link = null)
+					$author = bp_core_get_userlink( $post->post_author );
+					
+				} else {
+					
+					// get author url
+					$url = get_author_posts_url( $post->post_author );
+					
+					// WP sometimes leaves 'http://' or 'https://' in the field
+					if (  $url == 'http://'  OR $url == 'https://' ) {
+					
+						// clear
+						$url = '';
+					
+					}
+					
+					// construct link to user url
+					$author = ( $url != '' ) ? 
+							  '<a href="'.$user_link.'">'.$comment->comment_author.'</a>' : 
+							  $comment->comment_author;
+					
+				}
 		
 				// write list item
 				echo '<li class="title">
 				<div class="post-identifier">
 				'.get_avatar( $post->post_author, 32 ).'
-				<cite class="fn">'.get_the_author_meta( 'display_name', $post->post_author ).'</cite>
+				<cite class="fn">'.$author.'</cite>
 				<p class="post_activity_date">'.get_the_time('l, F jS, Y').'</p>
 				</div>
 				<a href="'.get_permalink( $post->ID ).'" class="post_activity_link">'.get_the_title( $post->ID ).' ('.$count.')</a>
@@ -892,7 +918,7 @@ HELPTEXT;
 
 	/** 
 	 * @description: get the minimise button
-	 * @param: string $sidebar type of sidebar (comments, toc, archive)
+	 * @param: string $sidebar type of sidebar (comments, toc, activity)
 	 * @return string $tag
 	 * @todo: 
 	 *
@@ -916,15 +942,26 @@ HELPTEXT;
 
 	/** 
 	 * @description: get the minimise all button
-	 * @param: string $sidebar type of sidebar (comments, toc, archive)
+	 * @param: string $sidebar type of sidebar (comments, toc, activity)
 	 * @return string $tag
 	 * @todo: 
 	 *
 	 */
 	function get_minimise_all_button( $sidebar = 'comments' ) {
 	
-		// define minimise button
-		$tag = '<span id="cp_minimise_all_comments" title="'.__( 'Minimise all Comment Sections', 'commentpress-plugin' ).'"></span>';
+		switch( $sidebar ) {
+	
+			case 'comments':
+				// define minimise button
+				$tag = '<span id="cp_minimise_all_comments" title="'.__( 'Minimise all Comment Sections', 'commentpress-plugin' ).'"></span>';
+				break;
+			
+			case 'activity':
+				// define minimise button
+				$tag = '<span id="cp_minimise_all_activity" title="'.__( 'Minimise all Activity Sections', 'commentpress-plugin' ).'"></span>';
+				break;
+			
+		}
 		
 		// --<
 		return $tag;

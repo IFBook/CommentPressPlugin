@@ -46,7 +46,7 @@ class CommentPressDatabase {
 	// paragraph-level comments
 	var $para_comments_enabled = 1;
 	
-	// TOC content
+	// TOC content ('post' or 'page')
 	var $toc_content = 'page';
 	
 	// TOC chapters are pages by default
@@ -779,6 +779,14 @@ class CommentPressDatabase {
 						$this->option_set( 'cp_show_subpages', 1 );
 					
 					}
+
+				}
+				
+				// extended or vanilla posts TOC
+				if ( $cp_show_posts_or_pages_in_toc == 'post' ) {
+					
+					$cp_show_extended_toc = $wpdb->escape( $cp_show_extended_toc );
+					$this->option_set( 'cp_show_extended_toc', ( $cp_show_extended_toc ? 1 : 0 ) );
 
 				}
 
@@ -2454,9 +2462,21 @@ class CommentPressDatabase {
 		);
 		
 		// add post-specific stuff
-		$title['post_title'] = 'Title Page';
-		$title['post_content'] = __( 'This is your title page. Edit it to suit your needs. It has been automatically set as your homepage but if you want another page as your homepage, set it in <em>Wordpress</em> &#8594; <em>Settings</em> &#8594; <em>Reading</em>.', 'commentpress-plugin' );
-		$title['page_template'] = 'welcome.php';
+		
+		// default page title
+		$_title = __( 'Title Page', 'commentpress-plugin' );
+
+		// set, but allow overrides
+		$title['post_title'] = apply_filters( 'cp_title_page_title', $_title );;
+		
+		// default content
+		$content = __( 'This is your title page. Edit it to suit your needs. It has been automatically set as your homepage but if you want another page as your homepage, set it in <em>Wordpress</em> &#8594; <em>Settings</em> &#8594; <em>Reading</em>.', 'commentpress-plugin' );
+		
+		// set, but allow overrides
+		$title['post_content'] = apply_filters( 'cp_title_page_content', $content );
+
+		// set template, but allow overrides
+		$title['page_template'] = apply_filters( 'cp_title_page_template', 'welcome.php' );
 
 		// Insert the post into the database
 		$title_id = wp_insert_post( $title );
@@ -2501,9 +2521,21 @@ class CommentPressDatabase {
 		);
 
 		// add post-specific stuff
-		$general_comments['post_title'] = __( 'General Comments', 'commentpress-plugin' );
-		$general_comments['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
-		$general_comments['page_template'] = 'comments-general.php';
+
+		// default page title
+		$title = __( 'General Comments', 'commentpress-plugin' );
+
+		// set, but allow overrides
+		$general_comments['post_title'] = apply_filters( 'cp_general_comments_title', $title );
+
+		// default content
+		$content = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
+		
+		// set, but allow overrides
+		$general_comments['post_content'] = apply_filters( 'cp_general_comments_content', $content );
+
+		// set template, but allow overrides
+		$general_comments['page_template'] = apply_filters( 'cp_general_comments_template', 'comments-general.php' );
 
 		// Insert the post into the database
 		$general_comments_id = wp_insert_post( $general_comments );
@@ -2544,9 +2576,21 @@ class CommentPressDatabase {
 		);
 
 		// add post-specific stuff
-		$all_comments['post_title'] = __( 'All Comments', 'commentpress-plugin' );
-		$all_comments['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
-		$all_comments['page_template'] = 'comments-all.php';
+
+		// default page title
+		$title = __( 'All Comments', 'commentpress-plugin' );
+
+		// set, but allow overrides
+		$all_comments['post_title'] = apply_filters( 'cp_all_comments_title', $title );
+		
+		// default content
+		$content = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
+		
+		// set, but allow overrides
+		$all_comments['post_content'] = apply_filters( 'cp_all_comments_content', $content );
+
+		// set template, but allow overrides
+		$all_comments['page_template'] = apply_filters( 'cp_all_comments_template', 'comments-all.php' );
 
 		// Insert the post into the database
 		$all_comments_id = wp_insert_post( $all_comments );
@@ -2587,9 +2631,21 @@ class CommentPressDatabase {
 		);
 		
 		// add post-specific stuff
-		$group['post_title'] = __( 'Comments by Commenter', 'commentpress-plugin' );
-		$group['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
-		$group['page_template'] = 'comments-by.php';
+
+		// default page title
+		$title = __( 'Comments by Commenter', 'commentpress-plugin' );
+
+		// set, but allow overrides
+		$group['post_title'] = apply_filters( 'cp_comments_by_title', $title );
+		
+		// default content
+		$content = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
+		
+		// set, but allow overrides
+		$group['post_content'] = apply_filters( 'cp_comments_by_content', $content );
+
+		// set template, but allow overrides
+		$group['page_template'] = apply_filters( 'cp_comments_by_template', 'comments-by.php' );
 
 		// Insert the post into the database
 		$group_id = wp_insert_post( $group );
@@ -2630,9 +2686,21 @@ class CommentPressDatabase {
 		);
 		
 		// add post-specific stuff
-		$blog['post_title'] = __( 'Blog', 'commentpress-plugin' );
-		$blog['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
-		$blog['page_template'] = 'blog.php';
+
+		// default page title
+		$title = __( 'Blog', 'commentpress-plugin' );
+
+		// set, but allow overrides
+		$blog['post_title'] = apply_filters( 'cp_blog_page_title', $title );
+		
+		// default content
+		$content = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
+		
+		// set, but allow overrides
+		$blog['post_content'] = apply_filters( 'cp_blog_page_content', $content );
+
+		// set template, but allow overrides
+		$blog['page_template'] = apply_filters( 'cp_blog_page_template', 'blog.php' );
 
 		// Insert the post into the database
 		$blog_id = wp_insert_post( $blog );
@@ -2676,9 +2744,21 @@ class CommentPressDatabase {
 		);
 		
 		// add post-specific stuff
-		$blog['post_title'] = __( 'Blog Archive', 'commentpress-plugin' );
-		$blog['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
-		$blog['page_template'] = 'archive.php';
+
+		// default page title
+		$title = __( 'Blog Archive', 'commentpress-plugin' );
+
+		// set, but allow overrides
+		$blog['post_title'] = apply_filters( 'cp_blog_archive_page_title', $title );
+		
+		// default content
+		$content = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
+		
+		// set, but allow overrides
+		$blog['post_content'] = apply_filters( 'cp_blog_archive_page_content', $content );
+
+		// set template, but allow overrides
+		$blog['page_template'] = apply_filters( 'cp_blog_archive_page_template', 'archive.php' );
 
 		// Insert the post into the database
 		$blog_id = wp_insert_post( $blog );
@@ -2699,7 +2779,7 @@ class CommentPressDatabase {
 
 	/** 
 	 * @description: create "table of contents" page
-	 * @todo: 
+	 * @todo: NOT USED
 	 *
 	 */
 	function _create_toc_page() {
@@ -2718,10 +2798,20 @@ class CommentPressDatabase {
 			'menu_order' => 0
 		);
 		
-		// add post-specific stuff
-		$toc['post_title'] = __( 'Table of Contents', 'commentpress-plugin' );
-		$toc['post_content'] = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
-		$toc['page_template'] = 'toc.php';
+		// default page title
+		$title = __( 'Table of Contents', 'commentpress-plugin' );
+
+		// set, but allow overrides
+		$toc['post_title'] = apply_filters( 'cp_toc_page_title', $title );
+		
+		// default content
+		$content = __( 'Do not delete this page. Page content is generated with a custom template.', 'commentpress-plugin' );
+		
+		// set, but allow overrides
+		$toc['post_content'] = apply_filters( 'cp_toc_page_content', $content );
+
+		// set template, but allow overrides
+		$toc['page_template'] = apply_filters( 'cp_toc_page_template', 'toc.php' );
 
 		// Insert the post into the database
 		$toc_id = wp_insert_post( $toc );
