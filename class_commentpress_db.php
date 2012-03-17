@@ -2758,7 +2758,7 @@ class CommentPressDatabase {
 		$blog['post_content'] = apply_filters( 'cp_blog_archive_page_content', $content );
 
 		// set template, but allow overrides
-		$blog['page_template'] = apply_filters( 'cp_blog_archive_page_template', 'archive.php' );
+		$blog['page_template'] = apply_filters( 'cp_blog_archive_page_template', 'archives.php' );
 
 		// Insert the post into the database
 		$blog_id = wp_insert_post( $blog );
