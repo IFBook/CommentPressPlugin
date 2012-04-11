@@ -472,12 +472,6 @@ Array.prototype.remove_item = function( item ) {
 		var header = $('#' + $.get_sidebar_name() + '_sidebar .sidebar_header');
 		var minimiser = $.get_sidebar_pane();
 	
-		// get viewport data
-		var viewport_height = $(window).height();
-		var viewport_scrolltop = $(window).scrollTop();
-		var viewport = viewport_height + viewport_scrolltop;
-		//console.log( 'viewport: ' + viewport );
-		
 		// get data on sidebar element
 		//var s_top = $.css_to_num( $.px_to_num( sidebar.css('top') ) );
 		var s_top = sidebar.position().top;
@@ -517,6 +511,12 @@ Array.prototype.remove_item = function( item ) {
 			var bottom_margin = $.css_to_num( $.px_to_num( $('#page_wrapper').css( 'margin-bottom' ) ) );
 		}
 		//console.log( 'bottom_margin: ' + bottom_margin );
+		
+		// get viewport data
+		var viewport_height = $(window).height();
+		var viewport_scrolltop = $(window).scrollTop();
+		var viewport = viewport_height + viewport_scrolltop;
+		//console.log( 'viewport: ' + viewport );
 		
 		// calculate the necessary height to reach the bottom of the viewport
 		var to_bottom = viewport - ( sidebar_diff + sc_diff + header_diff + minimiser_diff + bottom_margin );
@@ -588,7 +588,7 @@ Array.prototype.remove_item = function( item ) {
 	
 		
 	/** 
-	 * @description: get visible sidebar minimiser
+	 * @description: get visible sidebar
 	 * @todo: 
 	 *
 	 */
@@ -609,11 +609,11 @@ Array.prototype.remove_item = function( item ) {
 			}
 		}
 	
-		// if comments
-		if ( cp_default_sidebar == 'archive' ) {
-			name = 'archive';
+		// if activity
+		if ( cp_default_sidebar == 'activity' ) {
+			name = 'activity';
 			if ( cp_toc_on_top == 'y' ) {
-				//console.log( 'toc on archive_sidebar' );
+				//console.log( 'toc on activity_sidebar' );
 				name = 'toc';
 			}
 		}

@@ -402,69 +402,199 @@ class CommentPressNavigator {
 		$all_pages = array();
 		
 		
+		
+		// do we have a nav menu enabled?
+		if ( has_nav_menu( 'toc' ) ) {
+			
+			// YES - a custom menu disables "book" navigation
+			
+			// --<
+			return $all_pages;
+			
+			
+			
+			/*
+			
+			// ------------------------------------------------------------------
+			// For posterity: here's what I considered when trying to tease out
+			// page lists from menu items. However, menus can contain anything,
+			// including external links, so the effort to parse the menu doesn't
+			// seem to be worthwhile.
+			// ------------------------------------------------------------------
+			
+			// check menu locations
+			if ( ( $locations = get_nav_menu_locations() ) && isset( $locations[ $menu_name ] ) ) {
+				
+				// get the menu object
+				$menu = wp_get_nav_menu_object( $locations[ $menu_name ] );
+			
+				// default args for reference
+				$args = array(
+				
+					'order' => 'ASC',
+					'orderby' => 'menu_order',
+					'post_type' => 'nav_menu_item',
+					'post_status' => 'publish',
+					'output' => ARRAY_A,
+					'output_key' => 'menu_order',
+					'nopaging' => true,
+					'update_post_term_cache' => false
+				
+				);
 	
-		// default to no excludes
-		$excludes = '';
-		
-		// get special pages
-		$special_pages = $this->parent_obj->db->option_get('cp_special_pages');
-		
-		// are there any?
-		if ( is_array( $special_pages ) AND count( $special_pages ) > 0 ) {
-
-			// format them for the exclude param
-			$excludes = implode( ',', $special_pages );
-			
-		}
-		
-		// set list pages defaults
-		$defaults = array(
-			'child_of' => 0, 
-			'sort_order' => 'ASC',
-			'sort_column' => 'menu_order, post_title', 
-			'hierarchical' => 1,
-			'exclude' => $excludes, 
-			'include' => '',
-			'meta_key' => '', 
-			'meta_value' => '',
-			'authors' => '', 
-			'parent' => -1, 
-			'exclude_tree' => ''
-		);
-		
-		// get them
-		$all_pages = get_pages( $defaults );
-		
-
-
-		// if we have any pages...
-		if ( count( $all_pages ) > 0 ) {
-
-			// if chapters are not pages...
-			if ( $this->parent_obj->db->option_get( 'cp_toc_chapter_is_page' ) != '1' ) {
-			
-				// do we want all readable pages?
-				if ( $mode == 'readable' ) {
+				// get the page references
+				$menu_items = wp_get_nav_menu_items( $menu->term_id, $args );
 				
-					// filter chapters out
-					$all_pages = $this->_filter_chapters( $all_pages );
+				// init
+				$pages_to_get = array();
 				
+				// if we get some
+				if ( $menu_items ) {
+					
+					// convert to array of pages
+					foreach ( $menu_items AS $menu_item ) {
+					
+						// is it a WP item?
+						if ( isset( $menu_item->object_id ) ) {
+							
+							// construct array of WP pages in menu
+							$pages_to_get[] = $menu_item->object_id;
+							
+						}
+					
+					}
+				
+					print_r( array( 'menu_items' => $menu_items, 'pages_to_get' => $pages_to_get ) ); die();
+
+					// set list pages defaults
+					$defaults = array(
+						'child_of' => 0, 
+						'sort_order' => 'ASC',
+						'sort_column' => 'menu_order, post_title', 
+						'hierarchical' => 1,
+						'exclude' => '', 
+						'include' => implode( ',', $pages_to_get ),
+						'meta_key' => '', 
+						'meta_value' => '',
+						'authors' => '', 
+						'parent' => -1, 
+						'exclude_tree' => ''
+					);
+					
+					// get them
+					$all_pages = get_pages( $defaults );
+					
 				}
 				
 			}
+		
+			*/
+
+
+
+		} else {
+		
+		
+	
+			// -----------------------------------------------
+			// construct "book" navigation based on pages
+			// -----------------------------------------------
+				
+			// default to no excludes
+			$excludes = '';
 			
-			// if Theme My Login is present...
-			if ( defined( 'TML_ABSPATH' ) ) {
+			// get special pages
+			$special_pages = $this->parent_obj->db->option_get('cp_special_pages');
 			
-				// filter its page out
-				$all_pages = $this->_filter_theme_my_login_page( $all_pages );
+			// are we in a BuddyPress scenario?
+			if ( $this->parent_obj->is_buddypress() ) {
+			
+				// BuddyPress creates its own registration page at /register and
+				// redirects ordinary WP registration page requests to it. It also
+				// seems to exclude it from wp_list_pages(), see: $cp->display->list_pages()
+			
+				// check if registration is allowed
+				if ( '1' == get_option('users_can_register') AND is_main_site() ) {
+				
+					// find the registration page by its slug
+					$reg_page = get_page_by_path( 'register' );
+					
+					// did we get one?
+					if ( is_object( $reg_page ) AND isset( $reg_page->ID ) ) {
+						
+						// yes - exclude it as well
+						$special_pages[] = $reg_page->ID;
+					
+					}
+				
+				}
+			
+			}
+			
+			// are there any?
+			if ( is_array( $special_pages ) AND count( $special_pages ) > 0 ) {
+	
+				// format them for the exclude param
+				$excludes = implode( ',', $special_pages );
 				
 			}
 			
-		}
+			// set list pages defaults
+			$defaults = array(
+				'child_of' => 0, 
+				'sort_order' => 'ASC',
+				'sort_column' => 'menu_order, post_title', 
+				'hierarchical' => 1,
+				'exclude' => $excludes, 
+				'include' => '',
+				'meta_key' => '', 
+				'meta_value' => '',
+				'authors' => '', 
+				'parent' => -1, 
+				'exclude_tree' => ''
+			);
+			
+			// get them
+			$all_pages = get_pages( $defaults );
 			
 			
+			
+			// if we have any pages...
+			if ( count( $all_pages ) > 0 ) {
+	
+				// if chapters are not pages...
+				if ( $this->parent_obj->db->option_get( 'cp_toc_chapter_is_page' ) != '1' ) {
+				
+					// do we want all readable pages?
+					if ( $mode == 'readable' ) {
+					
+						// filter chapters out
+						$all_pages = $this->_filter_chapters( $all_pages );
+					
+					}
+					
+				}
+				
+				// if Theme My Login is present...
+				if ( defined( 'TML_ABSPATH' ) ) {
+				
+					// filter its page out
+					$all_pages = $this->_filter_theme_my_login_page( $all_pages );
+					
+				}
+				
+			}
+				
+				
+			
+		} // end check for custom menu
 		
+		
+		
+		//print_r( $all_pages ); die();
+		
+
+
 		// --<
 		return $all_pages;
 
@@ -694,8 +824,8 @@ class CommentPressNavigator {
 			
 			
 			// get all pages
-			$all_pages = $this->get_book_pages();
-			
+			$all_pages = $this->get_book_pages( 'readable' );
+
 			// if we have any pages...
 			if ( count( $all_pages ) > 0 ) {
 			
@@ -713,7 +843,7 @@ class CommentPressNavigator {
 				
 				// init the key we want
 				$page_key = false;
-			
+				
 				// loop
 				foreach( $all_pages AS $key => $page_obj ) {
 				
