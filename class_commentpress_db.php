@@ -197,6 +197,9 @@ class CommentPressDatabase {
 			// checkboxes send no value if not checked, so use a default
 			$cp_blog_workflow = $this->blog_workflow;
 			
+			// default blog type
+			$cp_blog_type = $this->blog_type;
+			
 			
 			
 			// get variables
