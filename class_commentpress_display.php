@@ -52,6 +52,9 @@ class CommentPressDisplay {
 	// touch-based mobile browser
 	var $is_mobile_touch = false;
 	
+	// touch-based tablet browser
+	var $is_tablet = false;
+	
 
 
 
@@ -170,7 +173,7 @@ class CommentPressDisplay {
 		$debug_state = '';
 	
 		// target different scripts when debugging
-		if ( defined( 'WP_DEBUG' ) AND WP_DEBUG === true ) {
+		if ( defined( 'SCRIPT_DEBUG' ) AND SCRIPT_DEBUG === true ) {
 		
 			// use uncompressed scripts
 			$debug_state = '.dev';
@@ -354,8 +357,8 @@ class CommentPressDisplay {
 		
 		
 		
-		// don't return TinyMCE for mobile phones
-		if ( $this->is_mobile_touch OR $this->is_mobile ) {
+		// don't return TinyMCE for touchscreens, mobile phones or tablets
+		if ( $this->is_mobile_touch OR $this->is_mobile OR $this->is_tablet ) {
 		
 			// --<
 			return;
@@ -440,7 +443,7 @@ class CommentPressDisplay {
 			$debug_state = '';
 		
 			// target different scripts when debugging
-			if ( defined( 'WP_DEBUG' ) AND WP_DEBUG === true ) {
+			if ( defined( 'SCRIPT_DEBUG' ) AND SCRIPT_DEBUG === true ) {
 			
 				// use uncompressed scripts
 				$debug_state = '.dev';
@@ -558,22 +561,23 @@ HELPTEXT;
 		
 		// have we set the option?
 		$list_style = $this->parent_obj->db->option_get('cp_show_extended_toc');
+		//print_r( $list_style ); die();
 		
 		// if not set or set to 'off'
-		if ( $list_style === false OR $list_style == 'off' ) {
+		if ( $list_style === false OR $list_style == '0' ) {
 		
 			// --------------------------
 			// old-style undecorated list
 			// --------------------------
 		
 			// run through them...
-			foreach( $posts AS $post ) {
+			foreach( $posts AS $item ) {
 		
 				// get comment count for that post
-				$count = count( $this->parent_obj->db->get_approved_comments( $post->ID ) );
+				$count = count( $this->parent_obj->db->get_approved_comments( $item->ID ) );
 		
 				// write list item
-				echo '<li class="title"><a href="'.get_permalink( $post->ID ).'">'.get_the_title( $post->ID ).' ('.$count.')</a></li>'."\n";
+				echo '<li class="title"><a href="'.get_permalink( $item->ID ).'">'.get_the_title( $item->ID ).' ('.$count.')</a></li>'."\n";
 			
 			}
 			
@@ -584,24 +588,24 @@ HELPTEXT;
 			// ------------------------
 		
 			// run through them...
-			foreach( $posts AS $post ) {
+			foreach( $posts AS $item ) {
 			
-				//print_r( $post ); die();
-				//setup_postdata( $post );
+				//print_r( $item ); die();
+				//setup_postdata( $item );
 		
 				// get comment count for that post
-				$count = count( $this->parent_obj->db->get_approved_comments( $post->ID ) );
+				$count = count( $this->parent_obj->db->get_approved_comments( $item->ID ) );
 				
 				// in BP, use its function
 				if ( $this->parent_obj->is_buddypress() ) {
 				
 					// buddypress link ($no_anchor = null, $just_link = null)
-					$author = bp_core_get_userlink( $post->post_author );
+					$author = bp_core_get_userlink( $item->post_author );
 					
 				} else {
 					
 					// get author url
-					$url = get_author_posts_url( $post->post_author );
+					$url = get_author_posts_url( $item->post_author );
 					
 					// WP sometimes leaves 'http://' or 'https://' in the field
 					if (  $url == 'http://'  OR $url == 'https://' ) {
@@ -613,19 +617,19 @@ HELPTEXT;
 					
 					// construct link to user url
 					$author = ( $url != '' ) ? 
-							  '<a href="'.$user_link.'">'.$comment->comment_author.'</a>' : 
-							  $comment->comment_author;
+							  '<a href="'.$url.'">'.get_the_author_meta( 'display_name', $item->post_author ).'</a>' : 
+							  get_the_author_meta( 'display_name', $item->post_author );
 					
 				}
 		
 				// write list item
 				echo '<li class="title">
 				<div class="post-identifier">
-				'.get_avatar( $post->post_author, 32 ).'
+				'.get_avatar( $item->post_author, 32 ).'
 				<cite class="fn">'.$author.'</cite>
-				<p class="post_activity_date">'.get_the_time('l, F jS, Y').'</p>
+				<p class="post_activity_date">'.get_the_time('l, F jS, Y', $item->ID ).'</p>
 				</div>
-				<a href="'.get_permalink( $post->ID ).'" class="post_activity_link">'.get_the_title( $post->ID ).' ('.$count.')</a>
+				<a href="'.get_permalink( $item->ID ).'" class="post_activity_link">'.get_the_title( $item->ID ).' ('.$count.')</a>
 				</li>'."\n";
 			
 			}
@@ -688,6 +692,8 @@ HELPTEXT;
 				
 				'theme_location' => 'toc',
 				'echo' => true,
+				'container' => '',
+				'items_wrap' => '%3$s',
 				
 			) );
 			
@@ -876,8 +882,25 @@ HELPTEXT;
 				$para_tag = '<div class="textblock" id="textblock-'.$text_signature.'">'.$commenticon; 
 				break;
 							
+			case 'span':
+		
+				// define opening tag (we'll close it later)
+				$para_tag = '<span class="textblock" id="textblock-'.$text_signature.'">'.$commenticon; 
+				break;
+							
 		}
 	
+
+		
+		/*
+		print_r( array( 
+		
+			't' => $text_signature,
+			'p' => $para_tag 
+		
+		) );
+		*/
+
 
 
 		// --<
@@ -1152,7 +1175,19 @@ HELPTEXT;
 		// if we need to upgrade...
 		if ( $this->parent_obj->db->check_upgrade() ) {
 		
-			// stripped out url
+			// get upgrade options
+			$upgrade = $this->_get_upgrade();
+			
+			// init text
+			$options_text = '';
+			
+			// if there are options
+			if ( $upgrade != '' ) {
+				
+				$options_text = ' The following options have become available in the new version.';
+				
+			}
+			
 			// define admin page
 			$admin_page = '
 <div class="icon32" id="icon-options-general"><br/></div>
@@ -1171,13 +1206,13 @@ HELPTEXT;
 
 <h3>Please upgrade Commentpress</h3>
 
-<p>It looks like you are running an older version of Commentpress. The following options have become available in the new version.</p>
+<p>It looks like you are running an older version of Commentpress.'.$options_text.'</p>
 
 
 
 <table class="form-table">
 
-'.$this->_get_upgrade().'
+'.$upgrade.'
 
 </table>
 
@@ -1260,46 +1295,6 @@ $this->_get_external_options().
 		
 
 
-			// define table of contents options
-			$toc = '
-	<tr valign="top">
-		<th scope="row"><label for="cp_show_posts_or_pages_in_toc">Table of Contents contains</label></th>
-		<td><select id="cp_show_posts_or_pages_in_toc" name="cp_show_posts_or_pages_in_toc">
-				<option value="post" '.(($this->parent_obj->db->option_get('cp_show_posts_or_pages_in_toc') == 'post') ? ' selected="selected"' : '').'>Posts</option>
-				<option value="page" '.(($this->parent_obj->db->option_get('cp_show_posts_or_pages_in_toc') == 'page') ? ' selected="selected"' : '').'>Pages</option>
-			</select>
-		</td>
-	</tr>
-
-	'.(($this->parent_obj->db->option_get('cp_show_posts_or_pages_in_toc') == 'page') ? '
-	<tr valign="top">
-		<th scope="row"><label for="cp_toc_chapter_is_page">Chapters are</label></th>
-		<td><select id="cp_toc_chapter_is_page" name="cp_toc_chapter_is_page">
-				<option value="1" '.(($this->parent_obj->db->option_get('cp_toc_chapter_is_page') == '1') ? ' selected="selected"' : '').'>Pages</option>
-				<option value="0" '.(($this->parent_obj->db->option_get('cp_toc_chapter_is_page') == '0') ? ' selected="selected"' : '').'>Headings</option>
-			</select>
-		</td>
-	</tr>' : '' ).'
-
-	'.(($this->parent_obj->db->option_get('cp_show_posts_or_pages_in_toc') == 'page' AND $this->parent_obj->db->option_get('cp_toc_chapter_is_page') == '0') ? '
-	<tr valign="top">
-		<th scope="row"><label for="cp_show_subpages">Show Sub-Pages</label></th>
-		<td><input id="cp_show_subpages" name="cp_show_subpages" value="1"  type="checkbox" '.( $this->parent_obj->db->option_get('cp_show_subpages') ? ' checked="checked"' : ''  ).' /></td>
-	</tr>' : '' ).'
-	
-	
-	<tr valign="top">
-		<th scope="row"><label for="cp_show_extended_toc">Appearance of TOC for posts</label></th>
-		<td><select id="cp_show_extended_toc" name="cp_show_extended_toc">
-				<option value="1">Extended information</option>
-				<option value="0" selected="selected">Just the title</option>
-			</select>
-		</td>
-	</tr>
-	';
-	
-	
-	
 			// define Commentpress theme options
 			$options = '
 <h3>Options for the Commentpress Theme</h3>
@@ -1348,6 +1343,8 @@ $this->_get_external_options().
 		<td><input id="cp_minimise_sidebar" name="cp_minimise_sidebar" value="1" type="checkbox" '.( $this->parent_obj->db->option_get('cp_minimise_sidebar') ? ' checked="checked"' : ''  ).' /></td>
 	</tr>
 
+'.$this->_get_optional_options().'
+
 </table>
 
 
@@ -1386,7 +1383,7 @@ Below are extra options for changing how the theme looks.</p>
 
 <table class="form-table">
 
-'.$toc.'
+'.$this->_get_toc().'
 
 </table>
 
@@ -1496,6 +1493,120 @@ Below are extra options for changing how the theme looks.</p>
 
 
 	/** 
+	 * @description: returns optional options, if defined
+	 * @return string $html
+	 * @todo: 
+	 *
+	 */
+	function _get_optional_options() {
+	
+		// init
+		$html = '';
+	
+	
+	
+		// do we have the option to choose blog type (new in 3.3.1)?
+		if ( $this->parent_obj->db->option_exists('cp_blog_type') ) {
+		
+			// define no types
+			$types = array();
+			
+			// allow overrides
+			$types = apply_filters( 'cp_blog_type_options', $types );
+			
+			// if we get some from a plugin, say...
+			if ( !empty( $types ) ) {
+			
+				// define title
+				$type_title = __( 'Blog Type', 'commentpress-plugin' );
+			
+				// allow overrides
+				$type_title = apply_filters( 'cp_blog_type_label', $type_title );
+			
+				// construct options
+				$type_option_list = array();
+				$n = 0;
+				
+				// get existing
+				$blog_type = $this->parent_obj->db->option_get('cp_blog_type');
+				
+				foreach( $types AS $type ) {
+					if ( $n == $blog_type ) {
+						$type_option_list[] = '<option value="'.$n.'" selected="selected">'.$type.'</option>';
+					} else {
+						$type_option_list[] = '<option value="'.$n.'">'.$type.'</option>';
+					}
+					$n++;
+				}
+				$type_options = implode( "\n", $type_option_list );
+				
+				
+				
+				// define upgrade
+				$html .= '
+	<tr valign="top">
+		<th scope="row"><label for="cp_blog_type">'.$type_title.'</label></th>
+		<td><select id="cp_blog_type" name="cp_blog_type">
+				'.$type_options.'
+			</select>
+		</td>
+	</tr>
+
+';
+
+			}
+
+		}
+		
+
+		
+		// do we have the option to choose blog workflow (new in 3.3.1)?
+		if ( $this->parent_obj->db->option_exists('cp_blog_workflow') ) {
+		
+			// off by default
+			$has_workflow = false;
+		
+			// allow overrides
+			$has_workflow = apply_filters( 'cp_blog_workflow_exists', $has_workflow );
+			
+			// if we have workflow enabled, by a plugin, say...
+			if ( $has_workflow !== false ) {
+			
+				// define label
+				$workflow_label = __( 'Enable Custom Workflow', 'commentpress-plugin' );
+			
+				// define label
+				$workflow_label = apply_filters( 'cp_blog_workflow_label', $workflow_label );
+			
+				// define upgrade
+				$html .= '
+	<tr valign="top">
+		<th scope="row"><label for="cp_blog_workflow">'.$workflow_label.'</label></th>
+		<td><input id="cp_blog_workflow" name="cp_blog_workflow" value="1" type="checkbox" '.( $this->parent_obj->db->option_get('cp_blog_workflow') ? ' checked="checked"' : ''  ).' /></td>
+
+	</tr>
+
+';
+
+			}
+
+		}
+		
+		
+		
+		// --<
+		return $html;
+		
+	}
+	
+	
+	
+	
+	
+		
+
+		
+	/** 
 	 * @description: returns the install button for the admin form
 	 * @return string $reset
 	 * @todo: 
@@ -1588,7 +1699,87 @@ Below are extra options for changing how the theme looks.</p>
 		
 		
 		
-		// do we have the option to choose the TOC layout (nnew in 3.3)?
+		// do we have the option to choose blog type (new in 3.3.1)?
+		if ( !$this->parent_obj->db->option_exists('cp_blog_type') ) {
+		
+			// define no types
+			$types = array();
+			
+			// allow overrides
+			$types = apply_filters( 'cp_blog_type_options', $types );
+			
+			// if we get some from a plugin, say...
+			if ( !empty( $types ) ) {
+			
+				// define title
+				$type_title = __( 'Blog Type', 'commentpress-plugin' );
+			
+				// allow overrides
+				$type_title = apply_filters( 'cp_blog_type_label', $type_title );
+			
+				// construct options
+				$type_option_list = array();
+				$n = 0;
+				foreach( $types AS $type ) {
+					$type_option_list[] = '<option value="'.$n.'">'.$type.'</option>';
+					$n++;
+				}
+				$type_options = implode( "\n", $type_option_list );
+				
+				
+				
+				// define upgrade
+				$upgrade .= '
+	<tr valign="top">
+		<th scope="row"><label for="cp_blog_type">'.$type_title.'</label></th>
+		<td><select id="cp_blog_type" name="cp_blog_type">
+				'.$type_options.'
+			</select>
+		</td>
+	</tr>
+
+';
+
+			}
+
+		}
+		
+
+		
+		// do we have the option to choose blog workflow (new in 3.3.1)?
+		if ( !$this->parent_obj->db->option_exists('cp_blog_workflow') ) {
+		
+			// off by default
+			$has_workflow = false;
+		
+			// allow overrides
+			$has_workflow = apply_filters( 'cp_blog_workflow_exists', $has_workflow );
+			
+			// if we have workflow enabled, by a plugin, say...
+			if ( $has_workflow !== false ) {
+			
+				// define label
+				$workflow_label = __( 'Enable Custom Workflow', 'commentpress-plugin' );
+			
+				// define label
+				$workflow_label = apply_filters( 'cp_blog_workflow_label', $workflow_label );
+			
+				// define upgrade
+				$upgrade .= '
+	<tr valign="top">
+		<th scope="row"><label for="cp_blog_workflow">'.$workflow_label.'</label></th>
+		<td><input id="cp_reset" name="cp_blog_workflow" value="1" type="checkbox" /></td>
+	</tr>
+
+';
+
+			}
+
+		}
+		
+
+		
+		// do we have the option to choose the TOC layout (new in 3.3)?
 		if ( !$this->parent_obj->db->option_exists('cp_show_extended_toc') ) {
 		
 			// define upgrade
@@ -1789,6 +1980,66 @@ Below are extra options for changing how the theme looks.</p>
 		
 		// --<
 		return $editor;
+		
+	}
+	
+	
+	
+	
+	
+
+
+
+	/** 
+	 * @description: returns the TOC options for the admin form
+	 * @return string $editor
+	 * @todo: 
+	 *
+	 */
+	function _get_toc() {
+		
+		// define table of contents options
+		$toc = '
+	<tr valign="top">
+		<th scope="row"><label for="cp_show_posts_or_pages_in_toc">Table of Contents contains</label></th>
+		<td><select id="cp_show_posts_or_pages_in_toc" name="cp_show_posts_or_pages_in_toc">
+				<option value="post" '.(($this->parent_obj->db->option_get('cp_show_posts_or_pages_in_toc') == 'post') ? ' selected="selected"' : '').'>Posts</option>
+				<option value="page" '.(($this->parent_obj->db->option_get('cp_show_posts_or_pages_in_toc') == 'page') ? ' selected="selected"' : '').'>Pages</option>
+			</select>
+		</td>
+	</tr>
+
+	'.(($this->parent_obj->db->option_get('cp_show_posts_or_pages_in_toc') == 'page') ? '
+	<tr valign="top">
+		<th scope="row"><label for="cp_toc_chapter_is_page">Chapters are</label></th>
+		<td><select id="cp_toc_chapter_is_page" name="cp_toc_chapter_is_page">
+				<option value="1" '.(($this->parent_obj->db->option_get('cp_toc_chapter_is_page') == '1') ? ' selected="selected"' : '').'>Pages</option>
+				<option value="0" '.(($this->parent_obj->db->option_get('cp_toc_chapter_is_page') == '0') ? ' selected="selected"' : '').'>Headings</option>
+			</select>
+		</td>
+	</tr>' : '' ).'
+
+	'.(($this->parent_obj->db->option_get('cp_show_posts_or_pages_in_toc') == 'page' AND $this->parent_obj->db->option_get('cp_toc_chapter_is_page') == '0') ? '
+	<tr valign="top">
+		<th scope="row"><label for="cp_show_subpages">Show Sub-Pages</label></th>
+		<td><input id="cp_show_subpages" name="cp_show_subpages" value="1"  type="checkbox" '.( $this->parent_obj->db->option_get('cp_show_subpages') ? ' checked="checked"' : ''  ).' /></td>
+	</tr>' : '' ).'
+	
+	
+	<tr valign="top">
+		<th scope="row"><label for="cp_show_extended_toc">Appearance of TOC for posts</label></th>
+		<td><select id="cp_show_extended_toc" name="cp_show_extended_toc">
+				<option value="1" '.(($this->parent_obj->db->option_get('cp_show_extended_toc') == '1') ? ' selected="selected"' : '').'>Extended information</option>
+				<option value="0" '.(($this->parent_obj->db->option_get('cp_show_extended_toc') == '0') ? ' selected="selected"' : '').'>Just the title</option>
+			</select>
+		</td>
+	</tr>
+	';
+	
+	
+	
+		// --<
+		return $toc;
 		
 	}
 	
@@ -2107,6 +2358,14 @@ Below are extra options for changing how the theme looks.</p>
 			
 				// set flag
 				$this->is_mobile = true;
+
+			}
+			
+			// is it a tablet?
+			if ( $detect->isIpad() OR $detect->isAndroidtablet() OR $detect->isBlackberrytablet() ) {
+			
+				// set flag
+				$this->is_tablet = true;
 
 			}
 			

@@ -15,8 +15,9 @@ Mark James, for the icon http://www.famfamfam.com/lab/icons/silk/
 */
 
 // set flag to activate Commentpress theme in multisite force-activated context
-define( 'CP_ACTIVATE_THEME', false );
-
+if ( !defined( 'CP_ACTIVATE_THEME' ) ) {
+	define( 'CP_ACTIVATE_THEME', false );
+}
 
 
 
@@ -26,13 +27,20 @@ define( 'CP_ACTIVATE_THEME', false );
 // ----------------------------------------------------------------
 
 // set version
-define( 'CP_VERSION', '3.3' );
+if ( !defined( 'CP_VERSION' ) ) {
+	//print_r( CP_VERSION ); die();
+	define( 'CP_VERSION', '3.3.1' );
+}
 
 // set testing flag
-define( 'CP_PLUGIN_TESTING', true );
+if ( !defined( 'CP_PLUGIN_TESTING' ) ) {
+	define( 'CP_PLUGIN_TESTING', true );
+}
 
 // store this file
-define( 'CP_PLUGIN_FILE', __FILE__ );
+if ( !defined( 'CP_PLUGIN_FILE' ) ) {
+	define( 'CP_PLUGIN_FILE', __FILE__ );
+}
 
 // get directory name of WP_CONTENT_DIR
 
@@ -60,14 +68,18 @@ plugin_dir_url( CP_PLUGIN_FILE ) fails in force-activated context
 if( is_file( dirname(__FILE__) . '/class_commentpress.php' ) ) {
 
 	// set current directory as plugin home directory
-	define( 'CP_PLUGIN_ABS_PATH', str_replace( '\\', '/', trailingslashit( dirname(__FILE__) ) ) );
+	if ( !defined( 'CP_PLUGIN_ABS_PATH' ) ) {
+		define( 'CP_PLUGIN_ABS_PATH', str_replace( '\\', '/', trailingslashit( dirname(__FILE__) ) ) );
+	}
 	
 	// make a temp array by splitting the path on a known directory name
 	$tmp_array = explode( $wp_content_dirname, CP_PLUGIN_ABS_PATH );
 	
 	// retain only the path following the split to create a relative path
-	define( 'CP_PLUGIN_REL_PATH', $wp_content_dirname.$tmp_array[1] );
-
+	if ( !defined( 'CP_PLUGIN_REL_PATH' ) ) {
+		define( 'CP_PLUGIN_REL_PATH', $wp_content_dirname.$tmp_array[1] );
+	}
+	
 // is our class file in the plugin subdirectory?
 } elseif( is_file( dirname(__FILE__) . '/commentpress/class_commentpress.php' ) ) {
 
@@ -93,8 +105,10 @@ if( is_file( dirname(__FILE__) . '/class_commentpress.php' ) ) {
 if ( basename( dirname(__FILE__) ) == 'mu-plugins' ) { 
 
 	// directory-based forced activation
-	define( 'CP_PLUGIN_CONTEXT', 'mu_forced' );
-
+	if ( !defined( 'CP_PLUGIN_CONTEXT' ) ) {
+		define( 'CP_PLUGIN_CONTEXT', 'mu_forced' );
+	}
+	
 // test for multisite
 } elseif ( is_multisite() ) {
 
@@ -126,21 +140,29 @@ if ( basename( dirname(__FILE__) ) == 'mu-plugins' ) {
 	if ( $flag ) {
 	
 		// selected sitewide forced activation
-		define( 'CP_PLUGIN_CONTEXT', 'mu_sitewide' );
-	
+		if ( !defined( 'CP_PLUGIN_CONTEXT' ) ) {
+			define( 'CP_PLUGIN_CONTEXT', 'mu_sitewide' );
+		}
+		
 	} else {
 
 		// optional/sitewide activation in multisite
-		define( 'CP_PLUGIN_CONTEXT', 'mu_optional' );
-	
+		if ( !defined( 'CP_PLUGIN_CONTEXT' ) ) {
+			define( 'CP_PLUGIN_CONTEXT', 'mu_optional' );
+		}
+		
 	}
 
 } else {
 
 	// single user install
-	define( 'CP_PLUGIN_CONTEXT', 'standard' );
+	if ( !defined( 'CP_PLUGIN_CONTEXT' ) ) {
+		define( 'CP_PLUGIN_CONTEXT', 'standard' );
+	}
 	
 }
+
+//print_r( CP_PLUGIN_CONTEXT ); //die();
 
 
 
@@ -187,22 +209,6 @@ if ( !class_exists( 'CommentPress' ) ) {
 	
 }
 
-
-
-/** 
- * @description: utility to add link to settings page
- * @todo: 
- *
- */
-function cp_plugin_action_links( $links, $file ) {
-	if ( $file == plugin_basename( dirname(__FILE__).'/commentpress.php' ) ) {
-		$links[] = '<a href="options-general.php?page=cp_admin_page">'.__('Settings').'</a>';
-	}
-
-	return $links;
-}
-
-add_filter( 'plugin_action_links', 'cp_plugin_action_links', 10, 2 );
 
 
 

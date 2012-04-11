@@ -123,7 +123,7 @@ class CommentPress {
 	 *
 	 */
 	function activate( $blog_id = null ) {
-	
+		
 		// if we're in multisite
 		if ( CP_PLUGIN_CONTEXT != 'standard' ) {
 			
@@ -247,8 +247,7 @@ class CommentPress {
 		
 			// check if this blog is a group blog...
 			$group_id = get_groupblog_group_id( get_current_blog_id() );
-			
-			if ( !empty( $group_id ) ) {
+			if ( is_numeric( $group_id ) ) {
 
 				// okay, we're properly configured
 				$this->bp_groupblog = true;
@@ -316,10 +315,29 @@ class CommentPress {
 		}
 		
 		// let's see...
-		return bp_current_component();
+		return !bp_is_blog_page();
 	
 	}
 	
+	
+	
+	
+	
+	
+	
+	/** 
+	 * @description: utility to add link to settings page
+	 * @todo: 
+	 *
+	 */
+	function plugin_action_links( $links, $file ) {
+	
+		if ( $file == CP_PLUGIN_FILE ) {
+			$links[] = '<a href="options-general.php?page=cp_admin_page">'.__('Settings').'</a>';
+		}
+	
+		return $links;
+	}
 	
 	
 	
@@ -608,7 +626,7 @@ class CommentPress {
 	
 		// reference our post
 		global $post;
-
+		
 
 
 		// compat with Theme My Login
@@ -656,16 +674,71 @@ class CommentPress {
 			// if it hasn't...
 			if ( !$has_quicktag ) {
 			
-				// set constant - okay, since we never return here
-				define( 'CP_BLOCK', 'tag' );
+				// if, BP, what type of blog is this?
+				if ( $this->is_groupblog() ) {
+				
+					// auto-format content accordingly
+					
+					// get action to take
+					$action = apply_filters(
+						
+						// hook
+						'cp_select_content_formatter',
+						
+						// default
+						'tag'
+						
+					);
+					
+					// act on it
+					switch( $action ) {
+						
+						// for poetry, for example, line by line commenting formatter is better
+						case 'line' :
+
+							// set constant - okay, since we never return here
+							if ( !defined( 'CP_BLOCK' ) ) 
+								define( 'CP_BLOCK', 'line' );
+						
+							// filter content by <br> and <br /> tags
+							$content = $this->_filter_content_by_line( $content );
+							
+							break;
+						
+						// for general prose, existing formatter is fine
+						case 'tag' :
+
+							// set constant
+							if ( !defined( 'CP_BLOCK' ) ) 
+								define( 'CP_BLOCK', 'tag' );
+						
+							// filter content by <p>, <ul> and <ol> tags
+							$content = $this->_filter_content( $content, 'p|ul|ol' );
+							
+							break;
+					
+					}
+					
+				} else {
+				
+					// as normal...
+					
+					// TO DO: check internal options, set on page/post edit screen
 			
-				// filter content by <p>, <ul> and <ol> tags
-				$content = $this->_filter_content( $content, 'p|ul|ol' );
+					// set constant
+					if ( !defined( 'CP_BLOCK' ) ) 
+						define( 'CP_BLOCK', 'tag' );
+				
+					// filter content by <p>, <ul> and <ol> tags
+					$content = $this->_filter_content( $content, 'p|ul|ol' );
+					
+				}
 				
 			} else {
 			
 				// set constant
-				define( 'CP_BLOCK', 'block' );
+				if ( !defined( 'CP_BLOCK' ) ) 
+					define( 'CP_BLOCK', 'block' );
 			
 				// filter content by <!--commentblock--> quicktags
 				$content = $this->_filter_comment_blocks( $content );
@@ -945,17 +1018,52 @@ class CommentPress {
 	 */
 	function add_meta_boxes() {
 		
-		// add our meta box
+		// add our meta boxes to pages
 		add_meta_box(
 		
 			'cp_page_options', 
 			__( 'Commentpress Options', 'commentpress-plugin' ), 
-			array( &$this, 'custom_box' ),
+			array( &$this, 'custom_box_page' ),
 			'page',
 			'side'
 			
 		);
 
+		// add our meta box to posts
+		add_meta_box(
+		
+			'cp_page_options', 
+			__( 'Commentpress Options', 'commentpress-plugin' ), 
+			array( &$this, 'custom_box_post' ),
+			'post',
+			'side'
+			
+		);
+		
+		// get workflow
+		$_workflow = $this->db->option_get( 'cp_blog_workflow' );
+		
+		// if it's enabled...
+		if ( $_workflow == '1' ) {
+		
+			// init title
+			$title = __( 'Workflow', 'commentpress-plugin' );
+			
+			// allow overrides
+			$title = apply_filters( 'cp_workflow_metabox_title', $title );
+		
+			// add our meta box to posts
+			add_meta_box(
+			
+				'cp_workflow_fields', 
+				$title, 
+				array( &$this, 'custom_box_workflow' ),
+				'post',
+				'normal'
+				
+			);
+			
+		}
 		
 	}
 	
@@ -970,7 +1078,7 @@ class CommentPress {
 	 * @todo: 
 	 *
 	 */
-	function custom_box() {
+	function custom_box_page() {
 		
 		// access post
 		global $post;
@@ -995,7 +1103,7 @@ class CommentPress {
 		// default to show
 		$viz = $this->db->option_get( 'cp_title_visibility' );
 		
-		//if the custom field already has a value...
+		// if the custom field already has a value...
 		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
 		
 			// get it
@@ -1038,7 +1146,7 @@ class CommentPress {
 			// default to arabic
 			$format = 'arabic';
 			
-			//if the custom field already has a value...
+			// if the custom field already has a value...
 			if ( get_post_meta( $post->ID, $key, true ) != '' ) {
 			
 				// get it
@@ -1078,7 +1186,7 @@ class CommentPress {
 			// default to text
 			$value = 'text';
 
-			//if the custom field already has a value...
+			// if the custom field already has a value...
 			if ( get_post_meta( $post->ID, $key, true ) != '' ) {
 			
 				// get it
@@ -1097,6 +1205,167 @@ class CommentPress {
 ';
 
 		}
+		
+	}
+	
+	
+	
+	
+		
+		
+		
+	/** 
+	 * @description: adds meta box to post edit screens
+	 * @todo: 
+	 *
+	 */
+	function custom_box_post() {
+		
+		// access post
+		global $post;
+		
+
+
+		// Use nonce for verification
+		wp_nonce_field( 'cp_post_settings', 'cp_nonce' );
+		
+		
+		
+		// set key
+		$key = '_cp_newer_version';
+		
+		// if the custom field already has a value...
+		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		
+			// get it
+			$new_post_id = get_post_meta( $post->ID, $key, true );
+			
+			// --------------------------------------------------------------
+			// Show link to newer post
+			// --------------------------------------------------------------
+			
+			// define label
+			$label = __( 'This post already has a new version', 'commentpress-plugin' );
+			
+			// get the edit post link
+			$edit_link = get_edit_post_link( $new_post_id );
+			
+			// define label
+			$link = __( 'Edit new version', 'commentpress-plugin' );
+			
+			// show link
+			echo '
+			<p><a href="'.$edit_link.'">'.$link.'</a></p>'."\n";
+
+		} else {
+		
+			// --------------------------------------------------------------
+			// Create new post with content of current post
+			// --------------------------------------------------------------
+			
+			// label
+			echo '<p><strong><label for="cp_page_layout">' . __('Versioning', 'commentpress-plugin' ) . '</label></strong></p>';
+			
+			// define label
+			$label = __( 'Create new version', 'commentpress-plugin' );
+			
+			// show a title
+			echo '
+			<div class="checkbox">
+				<label for="cp_new_post"><input type="checkbox" value="1" id="cp_new_post" name="cp_new_post" /> '.$label.'</label>
+			</div>'."\n";
+			
+		}
+		
+
+
+		// --------------------------------------------------------------
+		// Override post formatter
+		// --------------------------------------------------------------
+		
+		// do we have the option to choose blog type (new in 3.3.1)?
+		if ( $this->db->option_exists('cp_blog_type') ) {
+		
+			// define no types
+			$types = array();
+			
+			// allow overrides
+			$types = apply_filters( 'cp_blog_type_options', $types );
+			
+			// if we get some from a plugin, say...
+			if ( !empty( $types ) ) {
+			
+				// define title
+				$type_title = __( 'Text Formatting', 'commentpress-plugin' );
+			
+				// allow overrides
+				$type_title = apply_filters( 'cp_post_type_override_label', $type_title );
+			
+				// label
+				echo '<p><strong><label for="cp_post_type_override">'.$type_title.'</label></strong></p>';
+				
+				// construct options
+				$type_option_list = array();
+				$n = 0;
+				
+				// set key
+				$key = '_cp_post_type_override';
+				
+				// default to current blog type
+				$value = $this->db->option_get('cp_blog_type');
+				
+				// but, if the custom field has a value...
+				if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+				
+					// get it
+					$value = get_post_meta( $post->ID, $key, true );
+					
+				}
+				
+				foreach( $types AS $type ) {
+					if ( $n == $value ) {
+						$type_option_list[] = '<option value="'.$n.'" selected="selected">'.$type.'</option>';
+					} else {
+						$type_option_list[] = '<option value="'.$n.'">'.$type.'</option>';
+					}
+					$n++;
+				}
+				$type_options = implode( "\n", $type_option_list );
+				
+				
+				
+				// select
+				echo '
+				<p>
+				<select id="cp_post_type_override" name="cp_post_type_override">
+					'.$type_options.'
+				</select>
+				</p>
+				';
+
+			}
+			
+		}
+
+
+
+	}
+	
+	
+	
+	
+		
+		
+		
+	/** 
+	 * @description: adds workflow meta box to post edit screens
+	 * @todo: 
+	 *
+	 */
+	function custom_box_workflow() {
+		
+		// we now need to add any workflow that a plugin might want
+		do_action( 'cp_workflow_metabox' );
 		
 	}
 	
@@ -1181,9 +1450,40 @@ class CommentPress {
 	function save_post( $post_id, $post ) {
 	
 		// we don't use post_id because we're not interested in revisions
+		
+		// store our meta data
+		$result = $this->db->save_meta( $post );
+		
+		// get workflow
+		$_workflow = $this->db->option_get( 'cp_blog_workflow' );
+		
+		// if it's enabled...
+		if ( $_workflow == '1' ) {
+		
+			// notify plugins that workflow stuff needs saving
+			do_action( 'cp_workflow_save_post', $post );
+		
+		}
+		
+	}
 	
-		// store our page meta data
-		$result = $this->db->save_page_meta( $post );
+	
+	
+	
+	
+	
+
+	/** 
+	 * @description: check for data integrity of other posts when one is deleted
+	 * @param integer $post_id the ID of the post (or revision)
+	 * @param integer $post the post object
+	 * @todo: 
+	 *
+	 */
+	function delete_post( $post_id ) {
+	
+		// store our meta data
+		$result = $this->db->delete_meta( $post_id );
 		
 	}
 	
@@ -1200,12 +1500,15 @@ class CommentPress {
 	 * @todo: 
 	 *
 	 */
-	function comment_post( $comment_ID, $comment_status ) {
+	function save_comment( $comment_ID, $comment_status ) {
 	
 		// we don't use comment_status
 	
 		// store our comment signature
 		$result = $this->db->save_comment_signature( $comment_ID );
+		
+		// in multipage situations, store our comment's page
+		$result = $this->db->save_comment_page( $comment_ID );
 		
 	}
 	
@@ -1291,6 +1594,14 @@ class CommentPress {
 		// get all comments
 		$comments = $this->db->get_all_comments( $post_ID );
 		
+		
+		
+		// filter out any multipage comments not on this page
+		$comments = $this->_multipage_comment_filter( $comments );
+		//print_r( $comments ); die();
+		
+		
+		
 		// add all comments on the whole page
 		$_comments[] = array_merge(
 		
@@ -1320,7 +1631,7 @@ class CommentPress {
 		// do we have any text signatures?
 		if ( count( $_sigs ) > 0 ) {
 		
-			// loop through or signatures
+			// loop through our signatures
 			foreach( $_sigs AS $text_signature ) {
 			
 				// append comments filtered by that signature
@@ -1352,7 +1663,7 @@ class CommentPress {
 	 */
 	function get_para_num( $text_signature ) {
 	
-		// get position in array - does not cope with multiple entries!
+		// get position in array
 		$num = array_search( $text_signature, $this->db->get_text_sigs() );
 	
 		// --<
@@ -1825,7 +2136,7 @@ class CommentPress {
 		add_action( 'init', array( &$this, 'translation' ) );
 		
 		// modify comment posting
-		add_action( 'comment_post', array( &$this, 'comment_post' ), 10, 2 );
+		add_action( 'comment_post', array( &$this, 'save_comment' ), 10, 2 );
 		
 		// is this the back end?
 		if ( is_admin() ) {
@@ -1837,7 +2148,10 @@ class CommentPress {
 			add_action( 'add_meta_boxes' , array( &$this, 'add_meta_boxes' ) );
 			
 			// intercept save
-			add_action('save_post', array( &$this, 'save_post' ), 1, 2 );
+			add_action( 'save_post', array( &$this, 'save_post' ), 10, 2 );
+			
+			// intercept delete
+			add_action( 'before_delete_post', array( &$this, 'delete_post' ), 10, 1 );
 			
 			// there's a new screen object in 3.3
 			if ( version_compare( $wp_version, '3.2.99999', '>=' ) ) {
@@ -1856,15 +2170,18 @@ class CommentPress {
 			}
 			
 			// comment block quicktag
-			add_action('admin_print_scripts', array( &$this, 'enqueue_admin_scripts' ) );
+			add_action( 'admin_enqueue_scripts', array( &$this, 'enqueue_admin_scripts' ) );
 			
+			// add a neat link
+			add_filter( 'plugin_action_links', array( &$this, 'plugin_action_links' ), 10, 2 );
+
 		} else {
 		
 			// modify the document head
 			add_filter( 'wp_head', array( &$this, 'head' ) );
 			
 			// add script libraries
-			add_action( 'wp_print_scripts', array( &$this, 'enqueue_scripts' ) );
+			add_action( 'wp_enqueue_scripts', array( &$this, 'enqueue_scripts' ) );
 			
 			// add CSS files
 			add_action( 'wp_enqueue_scripts', array( &$this, 'enqueue_styles' ) );
@@ -1930,11 +2247,16 @@ class CommentPress {
 		
 		}
 		
-		// enable BuddyPress functionality
-		add_action( 'bp_include', array( &$this, 'buddypress_init' ) );
+		// if BP installed...
+		if ( defined( 'BP_VERSION' ) ) {
 		
-		// add BuddyPress functionality
-		add_action( 'bp_setup_globals', array( &$this, 'buddypress_globals_loaded' ) );
+			// enable BuddyPress functionality
+			add_action( 'bp_include', array( &$this, 'buddypress_init' ) );
+			
+			// add BuddyPress functionality
+			add_action( 'bp_setup_globals', array( &$this, 'buddypress_globals_loaded' ) );
+			
+		}
 		
 	}
 	
@@ -1987,11 +2309,35 @@ class CommentPress {
 		
 		
 		
+		// init ( array( 'text_signature' => n ), where n is the number of duplicates )
+		$duplicates = array();
+
 		// run through 'em...
 		foreach( $matches[0] AS $paragraph ) {
 	  
 			// get a signature for the paragraph
 			$text_signature = $this->_generate_text_signature( $paragraph );
+			
+			// do we have one already?
+			if ( in_array( $text_signature, $this->text_signatures ) ) {
+			
+				// is it in the duplicates array?
+				if ( array_key_exists( $text_signature, $duplicates ) ) {
+				
+					// add one
+					$duplicates[ $text_signature ]++;
+				
+				} else {
+				
+					// add it
+					$duplicates[ $text_signature ] = 1;
+				
+				}
+				
+				// add number to end of text sig
+				$text_signature .= '_'.$duplicates[ $text_signature ];
+				
+			}
 			
 			// add to signatures array
 			$this->text_signatures[] = $text_signature;
@@ -2057,10 +2403,55 @@ class CommentPress {
 			$replace = array( $this->display->get_para_tag( $text_signature, $commenticon, $tag ) );
 			$block = preg_replace( $pattern, $replace, $paragraph );
 			
+			// NOTE: because str_replace() has no limit to the replacements, I am switching to
+			// preg_replace() because that does have a limit
+			//$content = str_replace( $paragraph, $block, $content );
+			
+			// prepare paragraph for preg_replace
+			$prepared_para = str_replace( '/', '\/', $paragraph );
+			$prepared_para = str_replace( '(', '\(', $prepared_para );
+			$prepared_para = str_replace( ')', '\)', $prepared_para );
+			$prepared_para = str_replace( '"', '\"', $prepared_para );
+			$prepared_para = str_replace( "'", "\'", $prepared_para );
+			
+			/*
+			print_r( array( 
+			
+				'p' => $prepared_para,
+				'b' => $block
+			
+			) ); //die();
+			*/
+			
+			// only once please
+			$limit = 1;
+
 			// replace the paragraph in the original context, preserving all other content
-			$content = str_replace( $paragraph, $block, $content );
+			$content = preg_replace( 
+			
+				'/'.$prepared_para.'/', 
+				$block, 
+				$content,
+				$limit				
+				
+			);
+			
 			
 		}
+		
+
+
+		/*
+		print_r( array( 
+		
+			'd' => $duplicates,
+			't' => $this->text_signatures,
+			'c' => $content 
+		
+		) ); 
+		
+		die();
+		*/
 		
 
 
@@ -2079,11 +2470,21 @@ class CommentPress {
 	 * @description: filters the content by comment block
 	 * @param string $content the post content
 	 * @return string $content the parsed content
-	 * @todo: 
+	 * @todo: this is probably mighty slow - review preg_replace patterns
 	 *
 	 */
 	function _filter_comment_blocks( $content ) {
 	
+		// don't filter if a password is required
+		if ( post_password_required() ) {
+		
+			// --<
+			return $content;
+			
+		}
+		
+		
+		
 		// reference our post
 		global $post;
 
@@ -2091,7 +2492,29 @@ class CommentPress {
 		// wp_texturize() does an okay job with creating paragraphs, but comments tend
 		// to screw things up. let's try and fix...
 
-		// first, replace all instances of '<br />\n<!--commentblock--><br />\n' with
+		//print_r( array( 'before' => $content ) );
+
+		// first, replace all instances of '   <!--commentblock-->   ' with
+		// '<p><!--commentblock--></p>\n'
+		$content = preg_replace( 
+		
+			'/\s+<!--commentblock-->\s+/', 
+			'<p><!--commentblock--></p>'."\n", 
+			$content 
+			
+		);
+
+		// next, replace all instances of '<p><!--commentblock-->fengfnefe' with
+		// '<p><!--commentblock--></p>\n<p>fengfnefe'
+		$content = preg_replace( 
+		
+			'/<p><!--commentblock-->/', 
+			'<p><!--commentblock--></p>'."\n".'<p>', 
+			$content 
+			
+		);
+
+		// replace all instances of '<br />\n<!--commentblock--><br />\n' with
 		// '</p>\n<p><!--commentblock--></p>\n<p>'
 		$content = preg_replace( 
 		
@@ -2120,8 +2543,53 @@ class CommentPress {
 			$content 
 			
 		);
+		
+		// repair some oddities: empty newlines with whitespace after:
+		$content = preg_replace( 
+		
+			'/<p><br \/>\s+/', 
+			'<p>', 
+			$content 
+			
+		);
+		
+		// repair some oddities: empty newlines without whitespace after:
+		$content = preg_replace( 
+		
+			'/<p><br \/>/', 
+			'<p>', 
+			$content 
+			
+		);
+		
+		// repair some oddities: empty paragraphs with whitespace inside:
+		$content = preg_replace( 
+		
+			'/<p>\s+<\/p>\s+/', 
+			'', 
+			$content 
+			
+		);
+		
+		// repair some oddities: empty paragraphs without whitespace inside:
+		$content = preg_replace( 
+		
+			'/<p><\/p>\s+/', 
+			'', 
+			$content 
+			
+		);
 
-		//print_r( $content ); die();
+		// repair some oddities: any remaining empty paragraphs:
+		$content = preg_replace( 
+		
+			'/<p><\/p>/', 
+			'', 
+			$content 
+			
+		);
+
+		//print_r( array( 'after' => $content ) ); die();
 		
 		
 		
@@ -2132,6 +2600,9 @@ class CommentPress {
 
 		// explode by <p> version to temp array
 		$output_array = explode( '<p><'.'!--commentblock--></p>', $content );
+		
+		// init ( array( 'text_signature' => n ), where n is the number of duplicates )
+		$duplicates = array();
 
 		// run through 'em...
 		foreach( $output_array AS $paragraph ) {
@@ -2141,6 +2612,27 @@ class CommentPress {
 	  
 				// get a signature for the paragraph
 				$text_signature = $this->_generate_text_signature( $paragraph );
+				
+				// do we have one already?
+				if ( in_array( $text_signature, $this->text_signatures ) ) {
+				
+					// is it in the duplicates array?
+					if ( array_key_exists( $text_signature, $duplicates ) ) {
+					
+						// add one
+						$duplicates[ $text_signature ]++;
+					
+					} else {
+					
+						// add it
+						$duplicates[ $text_signature ] = 1;
+					
+					}
+					
+					// add number to end of text sig
+					$text_signature .= '_'.$duplicates[ $text_signature ];
+					
+				}
 				
 				// add to signatures array
 				$this->text_signatures[] = $text_signature;
@@ -2167,7 +2659,149 @@ class CommentPress {
 			
 		}
 
-		//print_r( $content_array ); die();
+		//print_r( $this->text_signatures ); //die();
+		//print_r( $duplicates ); die();
+	
+
+		
+		// rejoin and exclude quicktag
+		$content = implode( '', $content_array );
+	
+
+
+		// --<
+		return $content;
+
+	}
+	
+
+
+
+
+
+
+	/** 
+	 * @description: filters the content by line (<br />)
+	 * @param string $content the post content
+	 * @return string $content the parsed content
+	 * @todo: 
+	 *
+	 */
+	function _filter_content_by_line( $content ) {
+	
+		// don't filter if a password is required
+		if ( post_password_required() ) {
+		
+			// --<
+			return $content;
+			
+		}
+		
+		
+		
+		// reference our post
+		global $post;
+
+		
+		// wrap all lines with spans
+		$pattern = array('/<br \/>/', '/<br \/>\n/', '/<p>/', '/<\/p>/');
+		$replace = array( '</span><br />', '<br />'."\n".'<span class="cp-line">', '<p><span class="cp-line">', '</span></p>' );
+		$content = preg_replace( $pattern, $replace, $content );
+		
+		/*
+		print_r( array(
+		
+			'content' => $content,
+		
+		) ); die();
+		*/
+		
+
+
+		// init our content array
+		$content_array = array();
+	
+
+
+		// explode by <span>
+		$output_array = explode( '<span class="cp-line">', $content );
+		//print_r( $output_array ); die();
+		
+		// init ( array( 'text_signature' => n ), where n is the number of duplicates )
+		$duplicates = array();
+
+		// run through 'em...
+		foreach( $output_array AS $paragraph ) {
+		
+			// is there any content?
+			if ( $paragraph != '' ) {
+				
+				// check for paras
+				if ( $paragraph == '<p>' OR $paragraph == '</p>' ) {
+				
+					// do we want to allow commenting on verses?
+				
+					// add to content array
+					$content_array[] = $paragraph;
+	
+				} else {
+				
+					// line commenting
+				
+					// get a signature for the paragraph
+					$text_signature = $this->_generate_text_signature( $paragraph );
+					
+					// do we have one already?
+					if ( in_array( $text_signature, $this->text_signatures ) ) {
+					
+						// is it in the duplicates array?
+						if ( array_key_exists( $text_signature, $duplicates ) ) {
+						
+							// add one
+							$duplicates[ $text_signature ]++;
+						
+						} else {
+						
+							// add it
+							$duplicates[ $text_signature ] = 1;
+						
+						}
+						
+						// add number to end of text sig
+						$text_signature .= '_'.$duplicates[ $text_signature ];
+						
+					}
+					
+					// add to signatures array
+					$this->text_signatures[] = $text_signature;
+					
+					// get comment count
+					$comment_count = $this->_text_signature_count( $post->ID, $text_signature );
+					
+					// add to comment counter array
+					$this->comment_counts[] = $comment_count;
+					
+					// get comment icon
+					$commenticon = $this->display->get_icon( $comment_count, $text_signature );
+					
+					// get comment icon markup
+					$icon_html = $this->display->get_para_tag( $text_signature, $commenticon, 'span' );
+					
+					// assign icons to blocks
+					$paragraph = $icon_html.$paragraph; //.'</div>'."\n\n\n\n";
+					
+					// add to content array
+					$content_array[] = $paragraph;
+	
+				}
+				
+			}
+			
+		}
+
+		//print_r( $this->text_signatures ); //die();
+		//print_r( $duplicates ); die();
+		//die();
 	
 
 		
@@ -2505,8 +3139,11 @@ class CommentPress {
 		// get comments
 		$comments = $this->db->get_approved_comments( $post_ID );
 		
-		// filter
-		$filtered = $this->_text_signature_filter( $comments, $text_signature );
+		// filter out multipage comments
+		$filtered_by_page = $this->_multipage_comment_filter( $comments );
+		
+		// filter all but those with the text sig we want
+		$filtered = $this->_text_signature_filter( $filtered_by_page, $text_signature );
 		
 		// count them
 		$comment_count = count( $filtered );
@@ -2514,6 +3151,90 @@ class CommentPress {
 		// --<
 		return ( $comment_count > 0) ? $comment_count : 0;	
 	
+	}
+	
+
+
+
+
+
+
+	/** 
+	 * @description: filter comments to find comments for the current page of a multipage post
+	 * @param array $comments array of comment objects
+	 * @return array $filtered array of comments for the current page
+	 * @todo: 
+	 *
+	 */
+	function _multipage_comment_filter( $comments ) {
+	  
+		// access globals
+		global $post, $page, $multipage;
+		//print_r( $comments ); die();
+		
+
+
+	  	// init return
+		$filtered = array();
+
+		// kick out if no comments
+		if( !is_array( $comments ) ) {
+		
+			// --<
+			return $filtered;
+		}
+		
+		
+		
+		// kick out if not multipage
+		if( !isset( $multipage ) OR !$multipage ) {
+		
+			// --<
+			return $comments;
+			
+		}
+		
+		
+		
+		// now add only comments that are on this page or are page-level
+		foreach ( $comments AS $comment ) {
+		
+			// if it has a text sig
+			if ( !is_null( $comment->comment_text_signature ) AND $comment->comment_text_signature != '' ) {
+			
+				// set key
+				$key = '_cp_comment_page';
+				
+				// does it have a comment meta value?
+				if ( get_comment_meta( $comment->comment_ID, $key, true ) != '' ) {
+				
+					// get the page number
+					$page_num = get_comment_meta( $comment->comment_ID, $key, true );
+					
+					// is it the current one?
+					if ( $page_num == $page ) {
+					
+						// add it
+						$filtered[] = $comment;
+						
+					}
+					
+				}
+				
+			} else {
+			
+				// page-level comment: add it
+				$filtered[] = $comment;
+				
+			}
+		
+		}
+		
+		
+		
+		// --<
+		return $filtered;
+		
 	}
 	
 
