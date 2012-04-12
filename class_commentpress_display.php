@@ -777,14 +777,16 @@ HELPTEXT;
 	
 	
 	/** 
-	 * @description: get the paragraph icon
+	 * @description: get the block icons
 	 * @param integer $comment_count number of comments
 	 * @param string $text_signature comment text signature
+	 * @param string $block_type either 'auto', 'line' or 'block'
+	 * @param integer $para_num sequnetial commentable block number
 	 * @return string $comment_icon
 	 * @todo: 
 	 *
 	 */
-	function get_icon( $comment_count, $text_signature ) {
+	function get_icon( $comment_count, $text_signature, $block_type = 'auto', $para_num = 1 ) {
 	
 		// reset icon
 		$icon = null;
@@ -795,7 +797,6 @@ HELPTEXT;
 			// show add comment icon
 			$icon = 'comment_add.png';
 			$class = ' no_comments';
-			$number_span = '<small class="comment_count">'.(string) $comment_count.'</small>';
 			
 		} elseif( $comment_count > 0 ) {
 		
@@ -805,28 +806,210 @@ HELPTEXT;
 			
 		}
 		
-		// init s
-		$s = 's';
-		$are_is = 'are';
+		// define block title by block type
+		switch ( $block_type ) {
+			
+			// ----------------------------
+			// auto-formatted
+			// ----------------------------
+			case 'auto':
+			default:
+
+				// define title text
+				$title_text = sprintf( _n(
+					
+					// singular
+					'There is %d comment written for this paragraph', 
+					
+					// plural
+					'There are %d comments written for this paragraph', 
+					
+					// number
+					$comment_count, 
+					
+					// domain
+					'commentpress-plugin'
+				
+				// substitution
+				), $comment_count );
+				
+				// define permalink text
+				$permalink_text = sprintf( _n(
+					
+					// singular
+					'Permalink for paragraph %d', 
+					
+					// plural
+					'Permalink for paragraph %d', 
+					
+					// number
+					$para_num, 
+					
+					// domain
+					'commentpress-plugin'
+				
+				// substitution
+				), $para_num );
+				
+				// define add comment text
+				$add_text = sprintf( _n(
+					
+					// singular
+					'Leave a comment on paragraph %d', 
+					
+					// plural
+					'Leave a comment on paragraph %d', 
+					
+					// number
+					$para_num, 
+					
+					// domain
+					'commentpress-plugin'
+				
+				// substitution
+				), $para_num );
+				
+				// define paragraph marker
+				$para_marker = '<span class="para_marker"><a id="'.$text_signature.'" href="#'.$text_signature.'" title="'.$permalink_text.'">&para; <span>'.(string) $para_num.'</span></a></span>';
+				
+				break;
+			
+			// ----------------------------
+			// line-by-line, eg poetry
+			// ----------------------------
+			case 'line':
+
+				// define title text
+				$title_text = sprintf( _n(
+					
+					// singular
+					'There is %d comment written for this line', 
+					
+					// plural
+					'There are %d comments written for this line', 
+					
+					// number
+					$comment_count, 
+					
+					// domain
+					'commentpress-plugin'
+				
+				// substitution
+				), $comment_count );
+				
+				// define permalink text
+				$permalink_text = sprintf( _n(
+					
+					// singular
+					'Permalink for line %d', 
+					
+					// plural
+					'Permalink for line %d', 
+					
+					// number
+					$para_num, 
+					
+					// domain
+					'commentpress-plugin'
+				
+				// substitution
+				), $para_num );
+				
+				// define add comment text
+				$add_text = sprintf( _n(
+					
+					// singular
+					'Leave a comment on line %d', 
+					
+					// plural
+					'Leave a comment on line %d', 
+					
+					// number
+					$para_num, 
+					
+					// domain
+					'commentpress-plugin'
+				
+				// substitution
+				), $para_num );
+				
+				// define paragraph marker
+				$para_marker = '<span class="para_marker"><a id="'.$text_signature.'" href="#'.$text_signature.'" title="'.$permalink_text.'">&para; <span>'.(string) $para_num.'</span></a></span>';
+				
+				break;
+			
+
+			// ----------------------------
+			// comment-blocks
+			// ----------------------------
+			case 'block':
+
+				// define title text
+				$title_text = sprintf( _n(
+					
+					// singular
+					'There is %d comment written for this block', 
+					
+					// plural
+					'There are %d comments written for this block', 
+					
+					// number
+					$comment_count, 
+					
+					// domain
+					'commentpress-plugin'
+				
+				// substitution
+				), $comment_count );
+				
+				// define permalink text
+				$permalink_text = sprintf( _n(
+					
+					// singular
+					'Permalink for block %d', 
+					
+					// plural
+					'Permalink for block %d', 
+					
+					// number
+					$para_num, 
+					
+					// domain
+					'commentpress-plugin'
+				
+				// substitution
+				), $para_num );
+				
+				// define add comment text
+				$add_text = sprintf( _n(
+					
+					// singular
+					'Leave a comment on block %d', 
+					
+					// plural
+					'Leave a comment on block %d', 
+					
+					// number
+					$para_num, 
+					
+					// domain
+					'commentpress-plugin'
+				
+				// substitution
+				), $para_num );
+				
+				// define paragraph marker
+				$para_marker = '<span class="para_marker"><a id="'.$text_signature.'" href="#'.$text_signature.'" title="'.$permalink_text.'">&para; <span>'.(string) $para_num.'</span></a></span>';
+				
+				break;
 		
-		// if just one, add s
-		if ( $comment_count == 1 ) { 
-			$s = ''; 
-			$are_is = 'is';
 		}
 		
-		// define small (needs _n() translation?
-		$small = '<small class="comment_count" title="There '.$are_is.' '.$comment_count.' comment'.$s.' written for this paragraph">'.(string) $comment_count.'</small>';
-
+		// define small
+		$small = '<small class="comment_count" title="'.$title_text.'">'.(string) $comment_count.'</small>';
 		
-		
-		/*
 		// define HTML for comment icon
-		$comment_icon = '<span title="There '.$are_is.' '.$comment_count.' comment'.$s.' written for this paragraph" class="commenticonbox"><a class="para_permalink" href="#'.$text_signature.'" title="Permalink for this paragraph"><img alt="Comment icon for this paragraph" class="commenticon" id="'.$text_signature.'" src="'.get_bloginfo('template_directory').'/style/images/icons/'.$icon.'" /></a>'.$number_span.'</span>'."\n";
-		*/
-		
-		// define more accessable HTML for comment icon
-		$comment_icon = '<span class="commenticonbox"><a id="'.$text_signature.'" class="para_permalink'.$class.'" href="#'.$text_signature.'" title="Permalink for this paragraph">'.__( 'Permalink for this paragraph', 'commentpress-plugin' ).'</a> '.$small.'</span>'."\n";
+		$comment_icon = $para_marker.'<span class="commenticonbox"><a class="para_permalink'.$class.'" href="#'.$text_signature.'" title="'.$add_text.'">'.$add_text.'</a> '.$small.'</span>'."\n";
 		
 		
 		
