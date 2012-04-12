@@ -1567,6 +1567,36 @@ class CommentPressDatabase {
 			
 		}
 
+
+
+		// --------------------------------------------------------------
+		// Override post formatter (override blog_type)
+		// --------------------------------------------------------------
+		
+		// get the data
+		$_data = ( isset( $_POST['cp_post_type_override'] ) ) ? $_POST['cp_post_type_override'] : '';
+
+		//print_r( '$_data: '.$_data ); die();
+		//print_r( $post ); die();
+
+		// set key
+		$key = '_cp_post_type_override';
+		
+		//if the custom field already has a value...
+		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		
+			// update the data
+			update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+			
+		} else {
+		
+			// add the data
+			add_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+			
+		}
+
+
+
 	}
 	
 	

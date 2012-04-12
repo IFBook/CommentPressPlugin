@@ -1206,6 +1206,13 @@ class CommentPress {
 
 		}
 		
+
+
+		// get post formatter
+		$this->_get_post_formatter_metabox( $post );
+		
+
+
 	}
 	
 	
@@ -1277,76 +1284,11 @@ class CommentPress {
 			
 		}
 		
-
-
-		// --------------------------------------------------------------
-		// Override post formatter
-		// --------------------------------------------------------------
 		
-		// do we have the option to choose blog type (new in 3.3.1)?
-		if ( $this->db->option_exists('cp_blog_type') ) {
 		
-			// define no types
-			$types = array();
-			
-			// allow overrides
-			$types = apply_filters( 'cp_blog_type_options', $types );
-			
-			// if we get some from a plugin, say...
-			if ( !empty( $types ) ) {
-			
-				// define title
-				$type_title = __( 'Text Formatting', 'commentpress-plugin' );
-			
-				// allow overrides
-				$type_title = apply_filters( 'cp_post_type_override_label', $type_title );
-			
-				// label
-				echo '<p><strong><label for="cp_post_type_override">'.$type_title.'</label></strong></p>';
-				
-				// construct options
-				$type_option_list = array();
-				$n = 0;
-				
-				// set key
-				$key = '_cp_post_type_override';
-				
-				// default to current blog type
-				$value = $this->db->option_get('cp_blog_type');
-				
-				// but, if the custom field has a value...
-				if ( get_post_meta( $post->ID, $key, true ) != '' ) {
-				
-					// get it
-					$value = get_post_meta( $post->ID, $key, true );
-					
-				}
-				
-				foreach( $types AS $type ) {
-					if ( $n == $value ) {
-						$type_option_list[] = '<option value="'.$n.'" selected="selected">'.$type.'</option>';
-					} else {
-						$type_option_list[] = '<option value="'.$n.'">'.$type.'</option>';
-					}
-					$n++;
-				}
-				$type_options = implode( "\n", $type_option_list );
-				
-				
-				
-				// select
-				echo '
-				<p>
-				<select id="cp_post_type_override" name="cp_post_type_override">
-					'.$type_options.'
-				</select>
-				</p>
-				';
-
-			}
-			
-		}
-
+		// get post formatter
+		$this->_get_post_formatter_metabox( $post );
+		
 
 
 	}
@@ -3520,6 +3462,89 @@ class CommentPress {
 
 		// --<
 		return $_types;
+
+	}
+	
+	
+	
+	
+	
+	
+		
+	/** 
+	 * @description: adds the formatter to the page/post metabox
+	 * @todo:
+	 *
+	 */
+	function _get_post_formatter_metabox( $post ) {
+		
+		// --------------------------------------------------------------
+		// Override post formatter
+		// --------------------------------------------------------------
+		
+		// do we have the option to choose blog type (new in 3.3.1)?
+		if ( $this->db->option_exists('cp_blog_type') ) {
+		
+			// define no types
+			$types = array();
+			
+			// allow overrides
+			$types = apply_filters( 'cp_blog_type_options', $types );
+			
+			// if we get some from a plugin, say...
+			if ( !empty( $types ) ) {
+			
+				// define title
+				$type_title = __( 'Text Formatting', 'commentpress-plugin' );
+			
+				// allow overrides
+				$type_title = apply_filters( 'cp_post_type_override_label', $type_title );
+			
+				// label
+				echo '<p><strong><label for="cp_post_type_override">'.$type_title.'</label></strong></p>';
+				
+				// construct options
+				$type_option_list = array();
+				$n = 0;
+				
+				// set key
+				$key = '_cp_post_type_override';
+				
+				// default to current blog type
+				$value = $this->db->option_get('cp_blog_type');
+				
+				// but, if the custom field has a value...
+				if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+				
+					// get it
+					$value = get_post_meta( $post->ID, $key, true );
+					
+				}
+				
+				foreach( $types AS $type ) {
+					if ( $n == $value ) {
+						$type_option_list[] = '<option value="'.$n.'" selected="selected">'.$type.'</option>';
+					} else {
+						$type_option_list[] = '<option value="'.$n.'">'.$type.'</option>';
+					}
+					$n++;
+				}
+				$type_options = implode( "\n", $type_option_list );
+				
+				
+				
+				// select
+				echo '
+				<p>
+				<select id="cp_post_type_override" name="cp_post_type_override">
+					'.$type_options.'
+				</select>
+				</p>
+				';
+
+			}
+			
+		}
 
 	}
 	
