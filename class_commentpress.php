@@ -333,7 +333,7 @@ class CommentPress {
 	function plugin_action_links( $links, $file ) {
 	
 		if ( $file == CP_PLUGIN_FILE ) {
-			$links[] = '<a href="options-general.php?page=cp_admin_page">'.__('Settings').'</a>';
+			$links[] = '<a href="options-general.php?page=cp_admin_page">'.__( 'Settings', 'commentpress-plugin' ).'</a>';
 		}
 	
 		return $links;
@@ -2408,20 +2408,10 @@ class CommentPress {
 			//$content = str_replace( $paragraph, $block, $content );
 			
 			// prepare paragraph for preg_replace
-			$prepared_para = str_replace( '/', '\/', $paragraph );
-			$prepared_para = str_replace( '(', '\(', $prepared_para );
-			$prepared_para = str_replace( ')', '\)', $prepared_para );
-			$prepared_para = str_replace( '"', '\"', $prepared_para );
-			$prepared_para = str_replace( "'", "\'", $prepared_para );
+			$prepared_para = preg_quote( $paragraph );
 			
-			/*
-			print_r( array( 
-			
-				'p' => $prepared_para,
-				'b' => $block
-			
-			) ); //die();
-			*/
+			// because we use / as the delimiter, we need to escape all /s
+			$prepared_para = str_replace( '/', '\/', $prepared_para );
 			
 			// only once please
 			$limit = 1;
@@ -2429,13 +2419,24 @@ class CommentPress {
 			// replace the paragraph in the original context, preserving all other content
 			$content = preg_replace( 
 			
+				//array($paragraph), 
 				'/'.$prepared_para.'/', 
-				$block, 
+				$block,
 				$content,
 				$limit				
 				
 			);
 			
+			/*
+			print_r( array( 
+			
+				//'p' => $paragraph,
+				'p' => $prepared_para,
+				'b' => $block,
+				'c' => $content
+			
+			) ); //die();
+			*/
 			
 		}
 		
@@ -2704,8 +2705,36 @@ class CommentPress {
 
 		
 		// wrap all lines with spans
-		$pattern = array('/<br \/>/', '/<br \/>\n/', '/<p>/', '/<\/p>/');
-		$replace = array( '</span><br />', '<br />'."\n".'<span class="cp-line">', '<p><span class="cp-line">', '</span></p>' );
+		
+		// get all instances
+		$pattern = array(
+		
+			'/<br>/', 
+			'/<br\/>/', 
+			'/<br \/>/', 
+			'/<br>\n/', 
+			'/<br\/>\n/', 
+			'/<br \/>\n/', 
+			'/<p>/', 
+			'/<\/p>/'
+			
+		);
+		
+		// define replacements
+		$replace = array( 
+		
+			'</span><br>', 
+			'</span><br/>', 
+			'</span><br />', 
+			'<br>'."\n".'<span class="cp-line">', 
+			'<br/>'."\n".'<span class="cp-line">', 
+			'<br />'."\n".'<span class="cp-line">', 
+			'<p><span class="cp-line">', 
+			'</span></p>' 
+			
+		);
+		
+		// do replacement
 		$content = preg_replace( $pattern, $replace, $content );
 		
 		/*
