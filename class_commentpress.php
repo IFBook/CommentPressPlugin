@@ -2291,7 +2291,7 @@ class CommentPress {
 			$this->comment_counts[] = $comment_count;
 			
 			// get comment icon
-			$commenticon = $this->display->get_icon( $comment_count, $text_signature );
+			$commenticon = $this->display->get_icon( $comment_count, $text_signature, 'auto', count( $this->text_signatures ) );
 			
 			// set pattern by first tag
 			switch ( substr( $paragraph, 0 , 2 ) ) {
@@ -2587,7 +2587,7 @@ class CommentPress {
 				$this->comment_counts[] = $comment_count;
 				
 				// get comment icon
-				$commenticon = $this->display->get_icon( $comment_count, $text_signature );
+				$commenticon = $this->display->get_icon( $comment_count, $text_signature, 'block', count( $this->text_signatures ) );
 				
 				// get comment icon markup
 				$icon_html = $this->display->get_para_tag( $text_signature, $commenticon, 'div' );
@@ -2753,7 +2753,7 @@ class CommentPress {
 					$this->comment_counts[] = $comment_count;
 					
 					// get comment icon
-					$commenticon = $this->display->get_icon( $comment_count, $text_signature );
+					$commenticon = $this->display->get_icon( $comment_count, $text_signature, 'line', count( $this->text_signatures ) );
 					
 					// get comment icon markup
 					$icon_html = $this->display->get_para_tag( $text_signature, $commenticon, 'span' );
