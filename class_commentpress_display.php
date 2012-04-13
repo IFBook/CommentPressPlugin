@@ -2255,7 +2255,7 @@ Below are extra options for changing how the theme looks.</p>
 			// define pages options
 			$pages = '
 	<tr valign="top">
-		<th scope="row"><label for="cp_delete_pages">Delete all special pages</label></th>
+		<th scope="row"><label for="cp_delete_pages"><strong>Delete all special pages</strong></label></th>
 		<td><input id="cp_delete_pages" name="cp_delete_pages" value="1" type="checkbox" /></td>
 	</tr>
 	
@@ -2263,7 +2263,7 @@ Below are extra options for changing how the theme looks.</p>
 			
 			/*
 			// define individual pages
-			$individual_pages = '
+			$pages .= '
 	<tr valign="top">
 		<th scope="row"><label for="cp_delete_welcome_page">Delete Title Page</label></th>
 		<td><input id="cp_delete_welcome_page" name="cp_delete_welcome_page" value="1" type="checkbox" /></td>
@@ -2290,8 +2290,8 @@ Below are extra options for changing how the theme looks.</p>
 	</tr>
 	
 	<tr valign="top">
-		<th scope="row"><label for="cp_delete_toc_page">Delete Table of Contents Page</label></th>
-		<td><input id="cp_delete_toc_page" name="cp_delete_toc_page" value="1" type="checkbox" /></td>
+		<th scope="row"><label for="cp_delete_blog_archive_page">Delete Blog Archive Page</label></th>
+		<td><input id="cp_delete_blog_archive_page" name="cp_delete_blog_archive_page" value="1" type="checkbox" /></td>
 	</tr>
 	
 	';
@@ -2344,16 +2344,16 @@ Below are extra options for changing how the theme looks.</p>
 				// add auto-create pages
 				$pages = '
 		<tr valign="top">
-			<th scope="row"><label for="cp_create_pages">Create all special pages</label></th>
+			<th scope="row"><label for="cp_create_pages"><strong>Create all special pages</strong></label></th>
 			<td><input id="cp_create_pages" name="cp_create_pages" value="1" type="checkbox" /></td>
 		</tr>
 		
 		';
 
 
-		
+				/*
 				// define individual pages
-				$individual_pages = '
+				$pages .= '
 	<tr valign="top">
 		<th scope="row"><label for="cp_create_welcome_page">Create Title Page</label></th>
 		<td><input id="cp_create_welcome_page" name="cp_create_welcome_page" value="1" type="checkbox" /></td>
@@ -2380,12 +2380,12 @@ Below are extra options for changing how the theme looks.</p>
 	</tr>
 	
 	<tr valign="top">
-		<th scope="row"><label for="cp_create_toc_page">Create Table of Contents Page</label></th>
-		<td><input id="cp_create_toc_page" name="cp_create_toc_page" value="1" type="checkbox" /></td>
+		<th scope="row"><label for="cp_create_blog_archive_page">Create Blog Archive Page</label></th>
+		<td><input id="cp_create_blog_archive_page" name="cp_create_blog_archive_page" value="1" type="checkbox" /></td>
 	</tr>
 	
 	';
-	
+				*/
 			
 			
 			}
