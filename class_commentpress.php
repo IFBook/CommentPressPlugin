@@ -2457,6 +2457,16 @@ class CommentPress {
 			
 		);
 
+		// next, replace all instances of 'fengfnefe<!--commentblock--></p>' with
+		// 'fengfnefe</p>\n<p><!--commentblock--></p>'
+		$content = preg_replace( 
+		
+			'/<!--commentblock--><\/p>/', 
+			'</p>'."\n".'<p><!--commentblock--></p>'."\n", 
+			$content 
+			
+		);
+
 		// replace all instances of '<br />\n<!--commentblock--><br />\n' with
 		// '</p>\n<p><!--commentblock--></p>\n<p>'
 		$content = preg_replace( 
@@ -2807,6 +2817,17 @@ class CommentPress {
 		
 	
 		// look for < !--commentblock--> comment
+		if ( strstr( $content, '<!--commentblock-->' ) ) {
+		
+			// yep
+			$return = true;
+		
+		}
+		
+		
+		
+		/*
+		// look for < !--commentblock--> comment
 		if ( preg_match('/<'.'!--commentblock--><br \/>/', $content, $matches) ) {
 		
 			// yep
@@ -2823,6 +2844,7 @@ class CommentPress {
 			$return = true;
 		
 		}
+		*/
 		
 		
 		
