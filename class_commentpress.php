@@ -138,6 +138,14 @@ class CommentPress {
 		// initialise database
 		$this->db->initialise( $blog_id );
 		
+		// if we're in multisite
+		if ( CP_PLUGIN_CONTEXT != 'standard' ) {
+			
+			// done - restore current blog
+			restore_current_blog();
+
+		}
+	
 	}
 	
 	

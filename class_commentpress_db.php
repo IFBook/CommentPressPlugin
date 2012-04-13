@@ -139,8 +139,8 @@ class CommentPressDatabase {
 			// add options with default values
 			$this->options_create();
 			
-			// if we're force-activating in multisite (or sitewide)
-			if ( CP_PLUGIN_CONTEXT == 'mu_forced' OR CP_PLUGIN_CONTEXT == 'mu_sitewide' ) {
+			// if we're force-activating in multisite (need to review network activation)
+			if ( CP_PLUGIN_CONTEXT == 'mu_forced' ) { //OR CP_PLUGIN_CONTEXT == 'mu_sitewide' ) {
 			
 				// create special pages
 				$this->create_special_pages();
@@ -799,6 +799,18 @@ class CommentPressDatabase {
 			
 			// Commentpress Theme params 
 
+			// individual special pages
+			//$cp_welcome_page = $wpdb->escape( $cp_welcome_page );
+			//$cp_blog_page = $wpdb->escape( $cp_blog_page );
+			//$cp_general_comments_page = $wpdb->escape( $cp_general_comments_page );
+			//$cp_all_comments_page = $wpdb->escape( $cp_all_comments_page );
+			//$cp_comments_by_page = $wpdb->escape( $cp_comments_by_page );
+			//$this->option_set( 'cp_welcome_page', $cp_welcome_page );
+			//$this->option_set( 'cp_blog_page', $cp_blog_page );
+			//$this->option_set( 'cp_general_comments_page', $cp_general_comments_page );
+			//$this->option_set( 'cp_all_comments_page', $cp_all_comments_page );
+			//$this->option_set( 'cp_comments_by_page', $cp_comments_by_page );
+			
 			// comments enabled
 			$cp_para_comments_enabled = $wpdb->escape( $cp_para_comments_enabled );
 			$this->option_set( 'cp_para_comments_enabled', ( $cp_para_comments_enabled ? 1 : 0 ) );
@@ -836,20 +848,9 @@ class CommentPressDatabase {
 
 			}
 
+			// excerpt length
 			$this->option_set( 'cp_excerpt_length', $cp_excerpt_length );
 			$cp_excerpt_length = $wpdb->escape( $cp_excerpt_length );
-			
-			// (I have disabled being able to CHANGE these for now)
-			//$cp_welcome_page = $wpdb->escape( $cp_welcome_page );
-			//$cp_blog_page = $wpdb->escape( $cp_blog_page );
-			//$cp_general_comments_page = $wpdb->escape( $cp_general_comments_page );
-			//$cp_all_comments_page = $wpdb->escape( $cp_all_comments_page );
-			//$cp_comments_by_page = $wpdb->escape( $cp_comments_by_page );
-			//$this->option_set( 'cp_welcome_page', $cp_welcome_page );
-			//$this->option_set( 'cp_blog_page', $cp_blog_page );
-			//$this->option_set( 'cp_general_comments_page', $cp_general_comments_page );
-			//$this->option_set( 'cp_all_comments_page', $cp_all_comments_page );
-			//$this->option_set( 'cp_comments_by_page', $cp_comments_by_page );
 			
 			// comment editor
 			$cp_comment_editor = $wpdb->escape( $cp_comment_editor );
