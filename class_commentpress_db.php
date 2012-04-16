@@ -1775,11 +1775,16 @@ class CommentPressDatabase {
 
 		// add the data
 		add_post_meta( $new_post_id, $key, $value );
+		
+		
+		
+		// allow plugins to hook into this
+		do_action( 'cp_workflow_save_copy', $new_post_id );
 			
 
 
 		// get the edit post link
-		$edit_link = get_edit_post_link( $new_post_id );
+		//$edit_link = get_edit_post_link( $new_post_id );
 		
 		// redirect there?
 
