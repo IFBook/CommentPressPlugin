@@ -479,6 +479,20 @@ class CommentPressDisplay {
 					
 			}
 				
+			// test for commentpress special page
+			if ( $this->parent_obj->db->is_special_page() ) {
+			
+				// enqueue accordion-like js
+				wp_enqueue_script(
+				
+					'cp_special', 
+					$_base.'style/js/cp_js_all_comments.js', 
+					array('cp_form')
+				
+				);
+					
+			}
+				
 			// is this a CPT?
 			//$current_type = get_post_type();
 			//print_r( $current_type ); die();
