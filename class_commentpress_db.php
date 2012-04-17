@@ -2160,75 +2160,70 @@ class CommentPressDatabase {
 		
 		
 	
-		// Is it one of our themes?
-		if ( $this->parent_obj->is_allowed_theme() ) {
-		
-			// get special pages array, if it's there
-			$special_pages = $this->option_get( 'cp_special_pages' );
-		
-
-
-			// switch by page
-			switch( $_page ) {
-			
-				case 'title':
-				
-					// create welcome/title page
-					$new_id = $this->_create_title_page();
-					break;
-			
-				case 'general comments':
-				
-					// create general comments page
-					$new_id = $this->_create_general_comments_page();
-					break;
-			
-				case 'all comments':
-				
-					// create all comments page
-					$new_id = $this->_create_all_comments_page();
-					break;
-			
-				case 'comments by author':
-				
-					// create comments by author page
-					$new_id = $this->_create_comments_by_author_page();
-					break;
-			
-				case 'blog':
-				
-					// create blog page
-					$new_id = $this->_create_blog_page();
-					break;
-			
-				case 'blog_archive':
-				
-					// create blog page
-					$new_id = $this->_create_blog_archive_page();
-					break;
-			
-				case 'toc':
-				
-					// create TOC page
-					$new_id = $this->_create_toc_page();
-					break;
-			
-			}
-			
-			
-			
-			// add to special pages
-			$special_pages[] = $new_id;
-
-			// reset option
-			$this->option_set( 'cp_special_pages', $special_pages );
-			
-			// save changes
-			$this->options_save();
+		// get special pages array, if it's there
+		$special_pages = $this->option_get( 'cp_special_pages' );
 	
+
+
+		// switch by page
+		switch( $_page ) {
+		
+			case 'title':
+			
+				// create welcome/title page
+				$new_id = $this->_create_title_page();
+				break;
+		
+			case 'general_comments':
+			
+				// create general comments page
+				$new_id = $this->_create_general_comments_page();
+				break;
+		
+			case 'all_comments':
+			
+				// create all comments page
+				$new_id = $this->_create_all_comments_page();
+				break;
+		
+			case 'comments_by_author':
+			
+				// create comments by author page
+				$new_id = $this->_create_comments_by_author_page();
+				break;
+		
+			case 'blog':
+			
+				// create blog page
+				$new_id = $this->_create_blog_page();
+				break;
+		
+			case 'blog_archive':
+			
+				// create blog page
+				$new_id = $this->_create_blog_archive_page();
+				break;
+		
+			case 'toc':
+			
+				// create TOC page
+				$new_id = $this->_create_toc_page();
+				break;
+		
 		}
 		
 		
+		
+		// add to special pages
+		$special_pages[] = $new_id;
+
+		// reset option
+		$this->option_set( 'cp_special_pages', $special_pages );
+		
+		// save changes
+		$this->options_save();
+
+
 		
 		// --<
 		return $new_id;
@@ -2351,19 +2346,19 @@ class CommentPressDatabase {
 		
 					break;
 			
-				case 'general comments':
+				case 'general_comments':
 				
 					// set flag
 					$flag = 'cp_general_comments_page';
 					break;
 			
-				case 'all comments':
+				case 'all_comments':
 				
 					// set flag
 					$flag = 'cp_all_comments_page';
 					break;
 			
-				case 'comments by author':
+				case 'comments_by_author':
 				
 					// set flag
 					$flag = 'cp_comments_by_page';
