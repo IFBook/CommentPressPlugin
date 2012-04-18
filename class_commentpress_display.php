@@ -719,9 +719,12 @@ HELPTEXT;
 		
 		// get welcome page ID
 		$welcome_id = $this->parent_obj->db->option_get( 'cp_welcome_page' );
-	
-		// print link to title page, if we have one
-		if ( $welcome_id !== false ) {
+		
+		// get front page
+		$page_on_front = $this->parent_obj->db->option_wp_get( 'page_on_front' );
+		
+		// print link to title page, if we have one and it's the front page
+		if ( $welcome_id !== false AND $page_on_front == $welcome_id ) {
 		
 			// define title page
 			$title_page_title = get_the_title( $welcome_id );
