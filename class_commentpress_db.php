@@ -213,7 +213,7 @@ class CommentPressDatabase {
 				// get choice
 				$_choice = $wpdb->escape( $cp_blog_workflow );
 			
-				// add chosen cp_comment_editor option
+				// add chosen cp_blog_workflow option
 				$this->option_set( 'cp_blog_workflow', $_choice );
 				
 			}
@@ -226,7 +226,7 @@ class CommentPressDatabase {
 				// get choice
 				$_choice = $wpdb->escape( $cp_blog_type );
 			
-				// add chosen cp_comment_editor option
+				// add chosen cp_blog_type option
 				$this->option_set( 'cp_blog_type', $_choice );
 				
 			}
@@ -239,7 +239,7 @@ class CommentPressDatabase {
 				// get choice
 				$_choice = $wpdb->escape( $cp_show_extended_toc );
 			
-				// add chosen cp_comment_editor option
+				// add chosen cp_show_extended_toc option
 				$this->option_set( 'cp_show_extended_toc', $_choice );
 				
 			}
@@ -1457,7 +1457,7 @@ class CommentPressDatabase {
 		// set key
 		$key = '_cp_title_visibility';
 		
-		//if the custom field already has a value...
+		// if the custom field already has a value...
 		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
 		
 			// update the data
@@ -1497,7 +1497,7 @@ class CommentPressDatabase {
 		
 				//print_r( $post->ID ); die();
 				
-				//if the custom field already has a value...
+				// if the custom field already has a value...
 				if ( get_post_meta( $post->ID, $key, true ) != '' ) {
 				
 					// update the data
@@ -1553,7 +1553,7 @@ class CommentPressDatabase {
 			// set key
 			$key = '_cp_page_layout';
 			
-			//if the custom field already has a value...
+			// if the custom field already has a value...
 			if ( get_post_meta( $post->ID, $key, true ) != '' ) {
 			
 				// update the data
@@ -1583,7 +1583,7 @@ class CommentPressDatabase {
 		// set key
 		$key = '_cp_post_type_override';
 		
-		//if the custom field already has a value...
+		// if the custom field already has a value...
 		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
 		
 			// update the data
@@ -1669,7 +1669,7 @@ class CommentPressDatabase {
 		// --------------------------------------------------------------
 		
 		// get the data
-		$_data = ( isset( $_POST['cp_post_type_override'] ) ) ? $_POST['cp_post_type_override'] : '';
+		$_formatter = ( isset( $_POST['cp_post_type_override'] ) ) ? $_POST['cp_post_type_override'] : '';
 
 		//print_r( '$_data: '.$_data ); die();
 		//print_r( $post ); die();
@@ -1677,16 +1677,16 @@ class CommentPressDatabase {
 		// set key
 		$key = '_cp_post_type_override';
 		
-		//if the custom field already has a value...
+		// if the custom field already has a value...
 		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
 		
 			// update the data
-			update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+			update_post_meta( $post->ID, $key, $wpdb->escape( $_formatter ) );
 			
 		} else {
 		
 			// add the data
-			add_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+			add_post_meta( $post->ID, $key, $wpdb->escape( $_formatter ) );
 			
 		}
 
@@ -1775,6 +1775,23 @@ class CommentPressDatabase {
 
 		// add the data
 		add_post_meta( $new_post_id, $key, $value );
+		
+		
+		
+		// --------------------------------------------------------------------
+		// Store formatter in new version
+		// --------------------------------------------------------------------
+		
+		// set key
+		$key = '_cp_post_type_override';
+		
+		// if we have one set...
+		if ( $_formatter != '' ) {
+		
+			// add the data
+			add_post_meta( $new_post_id, $key, $wpdb->escape( $_formatter ) );
+			
+		}
 		
 		
 		
@@ -2726,7 +2743,7 @@ class CommentPressDatabase {
 				// set key
 				$key = '_cp_comment_page';
 				
-				//if the custom field already has a value...
+				// if the custom field already has a value...
 				if ( get_comment_meta( $comment_ID, $key, true ) != '' ) {
 				
 					// update the data

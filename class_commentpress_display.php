@@ -700,7 +700,7 @@ HELPTEXT;
 		
 		// test for custom menu
 		if ( has_nav_menu( 'toc' ) ) {
-			
+		
 			// try and use it
 			wp_nav_menu( array( 
 				
@@ -717,8 +717,30 @@ HELPTEXT;
 		
 		
 		
+		// get welcome page ID
+		$welcome_id = $this->parent_obj->db->option_get( 'cp_welcome_page' );
+		
+		// get front page
+		$page_on_front = $this->parent_obj->db->option_wp_get( 'page_on_front' );
+		
+		// print link to title page, if we have one and it's the front page
+		if ( $welcome_id !== false AND $page_on_front == $welcome_id ) {
+		
+			// define title page
+			$title_page_title = get_the_title( $welcome_id );
+		
+			// allow overrides
+			$title_page_title = apply_filters( 'cp_title_page_title', $title_page_title );
+		
+			// echo list item
+			echo '<li class="page_item page-item-'.$welcome_id.'"><a href="'.get_permalink( $welcome_id ).'">'.$title_page_title.'</a></li>';
+		
+		}
+		
+
+
 		// get page display option
-		$depth = $this->parent_obj->db->option_get('cp_show_subpages');
+		//$depth = $this->parent_obj->db->option_get('cp_show_subpages');
 		
 		// ALWAYS write subpages into page, even if they aren't displayed
 		$depth = 0;
@@ -731,6 +753,8 @@ HELPTEXT;
 		// do we have any?
 		if ( !$exclude ) { $exclude = array(); }
 		
+
+
 		// set list pages defaults
 		$defaults = array(
 		
