@@ -724,7 +724,7 @@ HELPTEXT;
 		if ( $welcome_id !== false ) {
 		
 			// define title page
-			$title_page_title = __( 'Title Page', 'commentpress-plugin' );
+			$title_page_title = get_the_title( $welcome_id );
 		
 			// allow overrides
 			$title_page_title = apply_filters( 'cp_title_page_title', $title_page_title );
