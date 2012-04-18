@@ -700,7 +700,7 @@ HELPTEXT;
 		
 		// test for custom menu
 		if ( has_nav_menu( 'toc' ) ) {
-			
+		
 			// try and use it
 			wp_nav_menu( array( 
 				
@@ -717,8 +717,27 @@ HELPTEXT;
 		
 		
 		
+		// get welcome page ID
+		$welcome_id = $this->parent_obj->db->option_get( 'cp_welcome_page' );
+	
+		// print link to title page, if we have one
+		if ( $welcome_id !== false ) {
+		
+			// define title page
+			$title_page_title = __( 'Title Page', 'commentpress-plugin' );
+		
+			// allow overrides
+			$title_page_title = apply_filters( 'cp_title_page_title', $title_page_title );
+		
+			// echo list item
+			echo '<li class="page_item page-item-'.$welcome_id.'"><a href="'.get_permalink( $welcome_id ).'">'.$title_page_title.'</a></li>';
+		
+		}
+		
+
+
 		// get page display option
-		$depth = $this->parent_obj->db->option_get('cp_show_subpages');
+		//$depth = $this->parent_obj->db->option_get('cp_show_subpages');
 		
 		// ALWAYS write subpages into page, even if they aren't displayed
 		$depth = 0;
@@ -731,6 +750,8 @@ HELPTEXT;
 		// do we have any?
 		if ( !$exclude ) { $exclude = array(); }
 		
+
+
 		// set list pages defaults
 		$defaults = array(
 		

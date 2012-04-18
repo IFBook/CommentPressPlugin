@@ -213,7 +213,7 @@ class CommentPressDatabase {
 				// get choice
 				$_choice = $wpdb->escape( $cp_blog_workflow );
 			
-				// add chosen cp_comment_editor option
+				// add chosen cp_blog_workflow option
 				$this->option_set( 'cp_blog_workflow', $_choice );
 				
 			}
@@ -226,7 +226,7 @@ class CommentPressDatabase {
 				// get choice
 				$_choice = $wpdb->escape( $cp_blog_type );
 			
-				// add chosen cp_comment_editor option
+				// add chosen cp_blog_type option
 				$this->option_set( 'cp_blog_type', $_choice );
 				
 			}
@@ -239,7 +239,7 @@ class CommentPressDatabase {
 				// get choice
 				$_choice = $wpdb->escape( $cp_show_extended_toc );
 			
-				// add chosen cp_comment_editor option
+				// add chosen cp_show_extended_toc option
 				$this->option_set( 'cp_show_extended_toc', $_choice );
 				
 			}
