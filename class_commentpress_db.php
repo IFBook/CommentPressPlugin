@@ -1414,8 +1414,8 @@ class CommentPressDatabase {
 		// is this an auto save routine?
 		if ( defined('DOING_AUTOSAVE') AND DOING_AUTOSAVE ) { return; }
 		
-		// Check permissions
-		if ( !current_user_can( 'edit_pages', $post_obj->ID ) ) { return; }
+		// check permissions - 'edit_pages' is available to editor+
+		if ( !current_user_can( 'edit_pages' ) ) { return; }
 		
 
 		
@@ -1634,8 +1634,8 @@ class CommentPressDatabase {
 		// is this an auto save routine?
 		if ( defined('DOING_AUTOSAVE') AND DOING_AUTOSAVE ) { return; }
 		
-		// Check permissions
-		if ( !current_user_can( 'edit_pages', $post_obj->ID ) ) { return; }
+		// check permissions - 'edit_posts' is available to contributor+
+		if ( !current_user_can( 'edit_posts', $post_obj->ID ) ) { return; }
 		
 
 		

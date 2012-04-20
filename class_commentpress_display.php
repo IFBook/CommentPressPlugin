@@ -1086,6 +1086,14 @@ HELPTEXT;
 				$para_tag = '<'.$tag.' class="textblock" id="textblock-'.$text_signature.'" start="0">'.
 							'<li class="list_commenticon">'.$commenticon.'</li>'; 
 				break;
+			
+			// compat with WP Footnotes
+			case 'ol class="footnotes"':
+		
+				// define list tag
+				$para_tag = '<ol class="footnotes textblock" id="textblock-'.$text_signature.'" start="0">'.
+							'<li class="list_commenticon">'.$commenticon.'</li>'; 
+				break;
 							
 			case 'p':
 			case 'p style="text-align:left;"':
