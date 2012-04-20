@@ -1945,8 +1945,8 @@ Below are extra options for changing how the theme looks.</p>
 	<tr valign="top">
 		<th scope="row"><label for="cp_page_meta_visibility">Show or hide page meta by default</label></th>
 		<td><select id="cp_page_meta_visibility" name="cp_page_meta_visibility">
-				<option value="show" selected="selected">Show page meta</option>
-				<option value="hide">Hide page meta</option>
+				<option value="show">Show page meta</option>
+				<option value="hide" selected="selected">Hide page meta</option>
 			</select>
 		</td>
 	</tr>

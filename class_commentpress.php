@@ -345,6 +345,34 @@ class CommentPress {
 		}
 	
 		return $links;
+
+	}
+	
+	
+	
+	
+	
+	
+	/** 
+	 * @description: utility to add a message to admin pages when upgrade required
+	 * @todo: 
+	 *
+	 */
+	function admin_upgrade_alert() {
+
+		// sanity check function exists
+		if ( function_exists('current_user_can') ) {
+	
+			// check user permissions
+			if ( current_user_can('manage_options') ) {
+			
+				// show it
+				echo '<div id="message" class="error">'.__( 'Commentpress has been updated. Please visit the ' ).'<a href="options-general.php?page=cp_admin_page">'.__( 'Settings Page', 'commentpress-plugin' ).'.</a></div>';
+			
+			}
+			
+		}
+		
 	}
 	
 	
@@ -2123,6 +2151,14 @@ class CommentPress {
 		
 		// is this the back end?
 		if ( is_admin() ) {
+		
+			// if upgrade required...
+			if ( $this->db->check_upgrade() ) {
+				
+				// show message
+				add_action( 'admin_notices', array( &$this, 'admin_upgrade_alert' ) );
+				
+			}
 	
 			// modify admin menu
 			add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
