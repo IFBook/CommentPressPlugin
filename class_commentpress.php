@@ -2412,7 +2412,7 @@ class CommentPress {
 			<p style="text-align:right;"> 
 			<p style="text-align:center;">
 			<p style="text-align:justify;">
-
+			
 			-------------------------------------------------------------
 			*/
 			
@@ -2435,6 +2435,20 @@ class CommentPress {
 	
 			}
 
+			/*
+			-------------------------------------------------------------
+			NOTES
+			-------------------------------------------------------------
+			
+			There are also flaws with parsing nested lists, both ordered and unordered. The WordPress
+			Unit Tests XML file reveals these, though the docs are hopefully clear enough that people
+			won't use nested lists. However, the severity is such that I'm contemplating migrating to
+			a DOM parser such as phpQuery <https://github.com/TobiaszCudnik/phpquery>. There are so
+			many examples of people saying "don't use regex with HTML" that this ought to be done.
+
+			-------------------------------------------------------------
+			*/
+			
 			// further checks when there's a <ol> tag
 			if ( $tag == 'ol' ) {
 				
