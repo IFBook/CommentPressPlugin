@@ -345,6 +345,34 @@ class CommentPress {
 		}
 	
 		return $links;
+
+	}
+	
+	
+	
+	
+	
+	
+	/** 
+	 * @description: utility to add a message to admin pages when upgrade required
+	 * @todo: 
+	 *
+	 */
+	function admin_upgrade_alert() {
+
+		// sanity check function exists
+		if ( function_exists('current_user_can') ) {
+	
+			// check user permissions
+			if ( current_user_can('manage_options') ) {
+			
+				// show it
+				echo '<div id="message" class="error"><p>'.__( 'Commentpress has been updated. Please visit the ' ).'<a href="options-general.php?page=cp_admin_page">'.__( 'Settings Page', 'commentpress-plugin' ).'</a>.</p></div>';
+			
+			}
+			
+		}
+		
 	}
 	
 	
@@ -368,6 +396,32 @@ class CommentPress {
 				// try and update options
 				$saved = $this->db->options_update();
 				
+				// if upgrade required...
+				if ( $this->db->check_upgrade() ) {
+					
+					// access globals
+					global $pagenow;
+					
+					// show on pages other than the CP admin page
+					if ( 
+					
+						$pagenow == 'options-general.php' 
+						AND !empty( $_GET['page'] ) 
+						AND 'cp_admin_page' == $_GET['page'] 
+						
+					) {
+					
+						// we're on our admin page
+						
+					} else {
+					
+						// show message
+						add_action( 'admin_notices', array( &$this, 'admin_upgrade_alert' ) );
+						
+					}
+					
+				}
+		
 				// insert item in relevant menu
 				$this->options_page = add_options_page(
 				
@@ -1125,6 +1179,39 @@ class CommentPress {
 <select id="cp_title_visibility" name="cp_title_visibility">
 	<option value="show" '.(($viz == 'show') ? ' selected="selected"' : '').'>'.__('Show page title', 'commentpress-plugin').'</option>
 	<option value="hide" '.(($viz == 'hide') ? ' selected="selected"' : '').'>'.__('Hide page title', 'commentpress-plugin').'</option>
+</select>
+</p>
+';
+
+		
+		
+		// --------------------------------------------------------------
+		// Show or Hide Page Meta
+		// --------------------------------------------------------------
+		
+		// show a label
+		echo '<p><strong><label for="cp_page_meta_visibility">' . __( 'Page Meta Visibility' , 'commentpress-plugin' ) . '</label></strong></p>';
+		
+		// set key
+		$key = '_cp_page_meta_visibility';
+		
+		// default to show
+		$viz = $this->db->option_get( 'cp_page_meta_visibility' );
+		
+		// if the custom field already has a value...
+		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		
+			// get it
+			$viz = get_post_meta( $post->ID, $key, true );
+			
+		}
+		
+		// select
+		echo '
+<p>
+<select id="cp_page_meta_visibility" name="cp_page_meta_visibility">
+	<option value="show" '.(($viz == 'show') ? ' selected="selected"' : '').'>'.__('Show page meta', 'commentpress-plugin').'</option>
+	<option value="hide" '.(($viz == 'hide') ? ' selected="selected"' : '').'>'.__('Hide page meta', 'commentpress-plugin').'</option>
 </select>
 </p>
 ';
@@ -2090,7 +2177,7 @@ class CommentPress {
 		
 		// is this the back end?
 		if ( is_admin() ) {
-	
+		
 			// modify admin menu
 			add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 			

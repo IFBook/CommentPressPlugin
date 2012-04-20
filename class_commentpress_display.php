@@ -1559,10 +1559,19 @@ $this->_get_external_options().
 '.$this->_get_editor().'
 
 	<tr valign="top">
-		<th scope="row"><label for="cp_title_visibility">Default page title visibility</label></th>
+		<th scope="row"><label for="cp_title_visibility">Default page title visibility (can be overridden on individual pages)</label></th>
 		<td><select id="cp_title_visibility" name="cp_title_visibility">
 				<option value="show" '.(($this->parent_obj->db->option_get('cp_title_visibility') == 'show') ? ' selected="selected"' : '').'>Show page titles</option>
 				<option value="hide" '.(($this->parent_obj->db->option_get('cp_title_visibility') == 'hide') ? ' selected="selected"' : '').'>Hide page titles</option>
+			</select>
+		</td>
+	</tr>
+
+	<tr valign="top">
+		<th scope="row"><label for="cp_page_meta_visibility">Default page meta visibility (can be overridden on individual pages)</label></th>
+		<td><select id="cp_page_meta_visibility" name="cp_page_meta_visibility">
+				<option value="show" '.(($this->parent_obj->db->option_get('cp_page_meta_visibility') == 'show') ? ' selected="selected"' : '').'>Show page meta</option>
+				<option value="hide" '.(($this->parent_obj->db->option_get('cp_page_meta_visibility') == 'hide') ? ' selected="selected"' : '').'>Hide page meta</option>
 			</select>
 		</td>
 	</tr>
@@ -1927,6 +1936,25 @@ Below are extra options for changing how the theme looks.</p>
 		$upgrade = '';
 		
 		
+		
+		// do we have the option to show or hide page meta (new in 3.3.2)?
+		if ( !$this->parent_obj->db->option_exists('cp_page_meta_visibility') ) {
+		
+			// define upgrade
+			$upgrade .= '
+	<tr valign="top">
+		<th scope="row"><label for="cp_page_meta_visibility">Show or hide page meta by default</label></th>
+		<td><select id="cp_page_meta_visibility" name="cp_page_meta_visibility">
+				<option value="show">Show page meta</option>
+				<option value="hide" selected="selected">Hide page meta</option>
+			</select>
+		</td>
+	</tr>
+';
+
+		}
+		
+
 		
 		// do we have the option to choose blog type (new in 3.3.1)?
 		if ( !$this->parent_obj->db->option_exists('cp_blog_type') ) {
