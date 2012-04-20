@@ -2348,6 +2348,21 @@ class CommentPress {
 	
 			}
 
+			// further checks when there's a <ol> tag
+			if ( $tag == 'ol' ) {
+				
+				// set pattern by TinyMCE tag attribute
+				switch ( substr( $paragraph, 0 , 21 ) ) {
+					
+					// compat with WP Footnotes
+					case '<ol class="footnotes"': $tag = 'ol class="footnotes"'; break;
+					
+					// see notes for p tag above
+				
+				}
+	
+			}
+
 			// assign icons to paras
 			$pattern = array('#<('.$tag.'[^a^r>]*)>#');
 			$replace = array( $this->display->get_para_tag( $text_signature, $commenticon, $tag ) );
