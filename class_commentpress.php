@@ -2443,8 +2443,14 @@ class CommentPress {
 			There are also flaws with parsing nested lists, both ordered and unordered. The WordPress
 			Unit Tests XML file reveals these, though the docs are hopefully clear enough that people
 			won't use nested lists. However, the severity is such that I'm contemplating migrating to
-			a DOM parser such as phpQuery <https://github.com/TobiaszCudnik/phpquery>. There are so
-			many examples of people saying "don't use regex with HTML" that this ought to be done.
+			a DOM parser such as:
+			
+			phpQuery <https://github.com/TobiaszCudnik/phpquery>
+			Simple HTML DOM <http://sourceforge.net/projects/simplehtmldom/>
+			Others <http://stackoverflow.com/questions/3577641/how-to-parse-and-process-html-with-php>
+			
+			There are so many examples of people saying "don't use regex with HTML" that this probably
+			ought to be done when time allows.
 
 			-------------------------------------------------------------
 			*/
