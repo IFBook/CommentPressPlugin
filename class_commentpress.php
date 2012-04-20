@@ -1132,6 +1132,39 @@ class CommentPress {
 		
 		
 		// --------------------------------------------------------------
+		// Show or Hide Page Meta
+		// --------------------------------------------------------------
+		
+		// show a label
+		echo '<p><strong><label for="cp_page_meta_visibility">' . __( 'Page Meta Visibility' , 'commentpress-plugin' ) . '</label></strong></p>';
+		
+		// set key
+		$key = '_cp_page_meta_visibility';
+		
+		// default to show
+		$viz = $this->db->option_get( 'cp_page_meta_visibility' );
+		
+		// if the custom field already has a value...
+		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		
+			// get it
+			$viz = get_post_meta( $post->ID, $key, true );
+			
+		}
+		
+		// select
+		echo '
+<p>
+<select id="cp_page_meta_visibility" name="cp_page_meta_visibility">
+	<option value="show" '.(($viz == 'show') ? ' selected="selected"' : '').'>'.__('Show page meta', 'commentpress-plugin').'</option>
+	<option value="hide" '.(($viz == 'hide') ? ' selected="selected"' : '').'>'.__('Hide page meta', 'commentpress-plugin').'</option>
+</select>
+</p>
+';
+
+		
+		
+		// --------------------------------------------------------------
 		// Page Numbering - only shown on first top level page
 		// --------------------------------------------------------------
 		//print_r( $this->nav->get_first_page() ); die();

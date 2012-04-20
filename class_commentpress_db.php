@@ -61,6 +61,9 @@ class CommentPressDatabase {
 	// show page titles by default
 	var $title_visibility = 'show';
 	
+	// hide page meta by default
+	var $page_meta_visibility = 'hide';
+	
 	// default editor (tinyMCE)
 	var $comment_editor = 1;
 	
@@ -207,7 +210,20 @@ class CommentPressDatabase {
 			
 
 
-			// New in CP3.3.1 - are we missing the cp_blog_workflow option?
+			// New in CP 3.3.2 - are we missing the cp_page_meta_visibility option?
+			if ( !$this->option_exists( 'cp_page_meta_visibility' ) ) {
+			
+				// get choice
+				$_choice = $wpdb->escape( $cp_page_meta_visibility );
+			
+				// add chosen cp_page_meta_visibility option
+				$this->option_set( 'cp_page_meta_visibility', $_choice );
+				
+			}
+			
+
+
+			// New in CP 3.3.1 - are we missing the cp_blog_workflow option?
 			if ( !$this->option_exists( 'cp_blog_workflow' ) ) {
 			
 				// get choice
@@ -220,7 +236,7 @@ class CommentPressDatabase {
 			
 
 
-			// New in CP3.3.1 - are we missing the cp_blog_type option?
+			// New in CP 3.3.1 - are we missing the cp_blog_type option?
 			if ( !$this->option_exists( 'cp_blog_type' ) ) {
 			
 				// get choice
@@ -233,7 +249,7 @@ class CommentPressDatabase {
 			
 
 
-			// New in CP3.3 - are we missing the cp_show_extended_toc option?
+			// New in CP 3.3 - are we missing the cp_show_extended_toc option?
 			if ( !$this->option_exists( 'cp_show_extended_toc' ) ) {
 			
 				// get choice
@@ -621,6 +637,7 @@ class CommentPressDatabase {
 			'cp_show_subpages' => $this->show_subpages,
 			'cp_show_extended_toc' => $this->show_extended_toc,
 			'cp_title_visibility' => $this->title_visibility,
+			'cp_page_meta_visibility' => $this->page_meta_visibility,
 			'cp_header_bg_colour' => $this->header_bg_colour,
 			'cp_js_scroll_speed' => $this->js_scroll_speed,
 			'cp_min_page_width' => $this->min_page_width,
@@ -873,6 +890,10 @@ class CommentPressDatabase {
 			$cp_title_visibility = $wpdb->escape( $cp_title_visibility );
 			$this->option_set( 'cp_title_visibility', $cp_title_visibility );
 			
+			// page meta visibility
+			$cp_page_meta_visibility = $wpdb->escape( $cp_page_meta_visibility );
+			$this->option_set( 'cp_page_meta_visibility', $cp_page_meta_visibility );
+			
 			// header background colour
 			
 			// strip our rgb #
@@ -1000,6 +1021,9 @@ class CommentPressDatabase {
 
 		// show or hide titles
 		$this->option_set( 'cp_title_visibility', $this->title_visibility );
+
+		// show or hide page meta
+		$this->option_set( 'cp_page_meta_visibility', $this->page_meta_visibility );
 
 		// header background colour
 		$this->option_set( 'cp_header_bg_colour', $this->header_bg_colour );
@@ -1442,6 +1466,34 @@ class CommentPressDatabase {
 		// database object and post
 		global $wpdb;
 		
+
+
+		// --------------------------------------------------------------
+		// Show or Hide Page Meta
+		// --------------------------------------------------------------
+		
+		// find and save the data
+		$_data = ( isset( $_POST['cp_page_meta_visibility'] ) ) ? $_POST['cp_page_meta_visibility'] : 'hide';
+
+		//print_r( '$_data: '.$_data ); die();
+		//print_r( $post ); die();
+
+		// set key
+		$key = '_cp_page_meta_visibility';
+		
+		// if the custom field already has a value...
+		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		
+			// update the data
+			update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+			
+		} else {
+		
+			// add the data
+			add_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+			
+		}
+
 
 
 		// --------------------------------------------------------------
