@@ -367,7 +367,7 @@ class CommentPress {
 			if ( current_user_can('manage_options') ) {
 			
 				// show it
-				echo '<div id="message" class="error">'.__( 'Commentpress has been updated. Please visit the ' ).'<a href="options-general.php?page=cp_admin_page">'.__( 'Settings Page', 'commentpress-plugin' ).'.</a></div>';
+				echo '<div id="message" class="error"><p>'.__( 'Commentpress has been updated. Please visit the ' ).'<a href="options-general.php?page=cp_admin_page">'.__( 'Settings Page', 'commentpress-plugin' ).'</a>.</p></div>';
 			
 			}
 			
@@ -396,6 +396,32 @@ class CommentPress {
 				// try and update options
 				$saved = $this->db->options_update();
 				
+				// if upgrade required...
+				if ( $this->db->check_upgrade() ) {
+					
+					// access globals
+					global $pagenow;
+					
+					// show on pages other than the CP admin page
+					if ( 
+					
+						$pagenow == 'options-general.php' 
+						AND !empty( $_GET['page'] ) 
+						AND 'cp_admin_page' == $_GET['page'] 
+						
+					) {
+					
+						// we're on our admin page
+						
+					} else {
+					
+						// show message
+						add_action( 'admin_notices', array( &$this, 'admin_upgrade_alert' ) );
+						
+					}
+					
+				}
+		
 				// insert item in relevant menu
 				$this->options_page = add_options_page(
 				
@@ -2152,14 +2178,6 @@ class CommentPress {
 		// is this the back end?
 		if ( is_admin() ) {
 		
-			// if upgrade required...
-			if ( $this->db->check_upgrade() ) {
-				
-				// show message
-				add_action( 'admin_notices', array( &$this, 'admin_upgrade_alert' ) );
-				
-			}
-	
 			// modify admin menu
 			add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 			

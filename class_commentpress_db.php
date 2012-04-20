@@ -598,8 +598,8 @@ class CommentPressDatabase {
 		// init
 		$result = false;
 		
-		// get installed version
-		$_version = $this->option_wp_get( 'cp_version' );
+		// get installed version cast as string
+		$_version = (string) $this->option_wp_get( 'cp_version' );
 		
 		// if we have a commentpress install and it's lower than this one
 		if ( $_version !== false AND version_compare( CP_VERSION, $_version, '>' ) ) {
