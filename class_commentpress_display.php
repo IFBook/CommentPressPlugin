@@ -1105,6 +1105,12 @@ HELPTEXT;
 				$para_tag = '<'.$tag.' class="textblock" id="textblock-'.$text_signature.'">'.$commenticon; 
 				break;
 							
+			case 'p class="notes"':
+		
+				// define para tag
+				$para_tag = '<p class="notes textblock" id="textblock-'.$text_signature.'">'.$commenticon; 
+				break;
+							
 			case 'div':
 		
 				// define opening tag (we'll close it later)

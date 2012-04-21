@@ -2433,6 +2433,11 @@ class CommentPress {
 				
 				}
 	
+				// test for Simple Footnotes para "heading"
+				switch ( substr( $paragraph, 0 , 16 ) ) {
+					case '<p class="notes"': $tag = 'p class="notes"'; break;
+				}
+	
 			}
 
 			/*
