@@ -2290,8 +2290,8 @@ class CommentPress {
 			// enable BuddyPress functionality
 			add_action( 'bp_include', array( &$this, 'buddypress_init' ) );
 			
-			// add BuddyPress functionality
-			add_action( 'bp_setup_globals', array( &$this, 'buddypress_globals_loaded' ) );
+			// add BuddyPress functionality (really late, so group object is set up)
+			add_action( 'bp_setup_globals', array( &$this, 'buddypress_globals_loaded' ), 1000 );
 			
 		}
 		
