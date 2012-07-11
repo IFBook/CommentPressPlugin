@@ -1783,7 +1783,7 @@ class CommentPressDatabase {
 		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
 			// if empty string...
-			if ( $_data === '' ) {
+			if ( $_formatter === '' ) {
 		
 				// delete the meta_key
 				delete_post_meta( $post->ID, $key );
