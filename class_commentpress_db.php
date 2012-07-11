@@ -1482,10 +1482,20 @@ class CommentPressDatabase {
 		$key = '_cp_page_meta_visibility';
 		
 		// if the custom field already has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
-			// update the data
-			update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+			// if empty string...
+			if ( $_data === '' ) {
+		
+				// delete the meta_key
+				delete_post_meta( $post->ID, $key );
+			
+			} else {
+			
+				// update the data
+				update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+				
+			}
 			
 		} else {
 		
@@ -1510,10 +1520,20 @@ class CommentPressDatabase {
 		$key = '_cp_title_visibility';
 		
 		// if the custom field already has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
-			// update the data
-			update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+			// if empty string...
+			if ( $_data === '' ) {
+		
+				// delete the meta_key
+				delete_post_meta( $post->ID, $key );
+			
+			} else {
+			
+				// update the data
+				update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+				
+			}
 			
 		} else {
 		
@@ -1550,10 +1570,20 @@ class CommentPressDatabase {
 				//print_r( $post->ID ); die();
 				
 				// if the custom field already has a value...
-				if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+				if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 				
-					// update the data
-					update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+					// if empty string...
+					if ( $_data === '' ) {
+				
+						// delete the meta_key
+						delete_post_meta( $post->ID, $key );
+					
+					} else {
+					
+						// update the data
+						update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+						
+					}
 					
 				} else {
 				
@@ -1606,10 +1636,20 @@ class CommentPressDatabase {
 			$key = '_cp_page_layout';
 			
 			// if the custom field already has a value...
-			if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+			if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 			
-				// update the data
-				update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+				// if empty string...
+				if ( $_data === '' ) {
+			
+					// delete the meta_key
+					delete_post_meta( $post->ID, $key );
+				
+				} else {
+				
+					// update the data
+					update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+					
+				}
 				
 			} else {
 			
@@ -1636,10 +1676,20 @@ class CommentPressDatabase {
 		$key = '_cp_post_type_override';
 		
 		// if the custom field already has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
-			// update the data
-			update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+			// if empty string...
+			if ( $_data === '' ) {
+		
+				// delete the meta_key
+				delete_post_meta( $post->ID, $key );
+			
+			} else {
+			
+				// update the data
+				update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+				
+			}
 			
 		} else {
 		
@@ -1730,10 +1780,20 @@ class CommentPressDatabase {
 		$key = '_cp_post_type_override';
 		
 		// if the custom field already has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
-			// update the data
-			update_post_meta( $post->ID, $key, $wpdb->escape( $_formatter ) );
+			// if empty string...
+			if ( $_data === '' ) {
+		
+				// delete the meta_key
+				delete_post_meta( $post->ID, $key );
+			
+			} else {
+			
+				// update the data
+				update_post_meta( $post->ID, $key, $wpdb->escape( $_formatter ) );
+				
+			}
 			
 		} else {
 		
@@ -1788,10 +1848,20 @@ class CommentPressDatabase {
 		$key = '_cp_newer_version';
 		
 		// if the custom field already has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
-			// update the data
-			update_post_meta( $post->ID, $key, $new_post_id );
+			// if empty string...
+			if ( $_data === '' ) {
+		
+				// delete the meta_key
+				delete_post_meta( $post->ID, $key );
+			
+			} else {
+			
+				// update the data
+				update_post_meta( $post->ID, $key, $new_post_id );
+				
+			}
 			
 		} else {
 		
@@ -1810,7 +1880,7 @@ class CommentPressDatabase {
 		$key = '_cp_version_count';
 		
 		// if the custom field of our current post has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
 			// get current value
 			$value = get_post_meta( $post->ID, $key, true );
