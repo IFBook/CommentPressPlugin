@@ -104,15 +104,27 @@ class CommentPressDisplay {
 		
 			// activate our base theme
 			// NOTE: should this be removed in favour of a Network Admin screen option?
-			$themes = get_themes();
+
+			// get all themes
+			if ( function_exists( 'wp_get_themes' ) ) {
+				$themes = wp_get_themes();
+			} else {
+				$themes = get_themes();
+			}
+			
+			// get Commentpress theme by default, but allow overrides
+			$target_theme = apply_filters(
+				'cp_forced_theme_name',
+				'Commentpress'
+			);
 			
 			// the key is the theme name
-			if ( isset( $themes['Commentpress'] ) ) {
+			if ( isset( $themes[ $target_theme ] ) ) {
 				
 				// activate it
 				switch_theme( 
-					$themes['Commentpress']['Template'], 
-					$themes['Commentpress']['Stylesheet'] 
+					$themes[ $target_theme ]['Template'], 
+					$themes[ $target_theme ]['Stylesheet'] 
 				);
 		
 			}
