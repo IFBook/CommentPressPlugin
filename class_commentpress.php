@@ -55,6 +55,15 @@ class CommentPress {
 	// bp-groupblog present
 	var $bp_groupblog = false;
 	
+	// all comments
+	var $comments_all = array();
+	
+	// approved comments
+	var $comments_approved = array();
+	
+	// sorted comments
+	var $comments_sorted = array();
+	
 
 
 
@@ -718,12 +727,29 @@ class CommentPress {
 				
 		// only parse posts or pages...	
 		if( ( is_single() OR is_page() OR is_attachment() ) AND !$this->db->is_special_page() ) {
-		
-			// init comment counts array
-			$this->comment_counts = array();
 			
-			// add whole page count to comment counts
-			$this->comment_counts[] = $this->_text_signature_count( $post->ID, '' );
+			
+			
+			/*
+			One of the problems we have here is that we need to build the text signatures array	in order to 
+			assign comment counts to paras/blocks, but this is only built once the_content has been parsed.
+			
+			So, ideally, we'd run through the content once to extract the text signatures, then run through
+			it again to update it with comment counts. This will be a heap easier when we move to an XML parser.
+			
+			In the meantime, well, what?
+			*/
+			
+			
+			
+			// retrieve all comments and store...
+			// we need this data multiple times and only need to get it once
+			$this->comments_all = $this->db->get_all_comments( $post->ID );
+			
+			// retrieve approved comments
+			$this->comments_approved = $this->db->get_approved_comments( $post->ID );
+			
+			
 			
 			// strip out <!--shortcode--> tags
 			$content = $this->_strip_shortcodes( $content );
@@ -762,8 +788,18 @@ class CommentPress {
 							if ( !defined( 'CP_BLOCK' ) ) 
 								define( 'CP_BLOCK', 'line' );
 						
-							// filter content by <br> and <br /> tags
-							$content = $this->_filter_content_by_line( $content );
+							// generate text signatures array
+							$this->text_signatures = $this->_generate_line_signatures( $content );
+							//print_r( $this->text_signatures ); die();
+							
+							// only continue parsing if we have an array of sigs
+							if ( !empty( $this->text_signatures ) ) {
+							
+								// filter content by <br> and <br /> tags
+								$content = $this->_parse_lines( $content );
+								//$content = $this->_filter_content_by_line( $content );
+								
+							}
 							
 							break;
 						
@@ -773,9 +809,18 @@ class CommentPress {
 							// set constant
 							if ( !defined( 'CP_BLOCK' ) ) 
 								define( 'CP_BLOCK', 'tag' );
-						
-							// filter content by <p>, <ul> and <ol> tags
-							$content = $this->_filter_content( $content, 'p|ul|ol' );
+								
+							// generate text signatures array
+							$this->text_signatures = $this->_generate_text_signatures( $content, 'p|ul|ol' );
+							//print_r( $this->text_signatures ); die();
+							
+							// only continue parsing if we have an array of sigs
+							if ( !empty( $this->text_signatures ) ) {
+							
+								// filter content by <p>, <ul> and <ol> tags
+								$content = $this->_parse_content( $content, 'p|ul|ol' );
+								
+							}
 							
 							break;
 					
@@ -791,8 +836,16 @@ class CommentPress {
 					if ( !defined( 'CP_BLOCK' ) ) 
 						define( 'CP_BLOCK', 'tag' );
 				
-					// filter content by <p>, <ul> and <ol> tags
-					$content = $this->_filter_content( $content, 'p|ul|ol' );
+					// generate text signatures array
+					$this->text_signatures = $this->_generate_text_signatures( $content, 'p|ul|ol' );
+				
+					// only parse content if we have an array of sigs
+					if ( !empty( $this->text_signatures ) ) {
+					
+						// filter content by <p>, <ul> and <ol> tags
+						$content = $this->_parse_content( $content, 'p|ul|ol' );
+						
+					}
 					
 				}
 				
@@ -802,8 +855,17 @@ class CommentPress {
 				if ( !defined( 'CP_BLOCK' ) ) 
 					define( 'CP_BLOCK', 'block' );
 			
-				// filter content by <!--commentblock--> quicktags
-				$content = $this->_filter_comment_blocks( $content );
+				// generate text signatures array
+				$this->text_signatures = $this->_generate_block_signatures( $content );
+				//print_r( $this->text_signatures ); die();
+				
+				// only parse content if we have an array of sigs
+				if ( !empty( $this->text_signatures ) ) {
+				
+					// filter content by <!--commentblock--> quicktags
+					$content = $this->_parse_blocks( $content );
+					
+				}
 				
 			}
 
@@ -1620,68 +1682,16 @@ class CommentPress {
 	 */
 	function get_sorted_comments( $post_ID ) {
 	
-		// init return
-		$_comments = array();
-		
-		
-	
-		// get all approved comments
-		//$comments = $this->db->get_approved_comments( $post_ID );
-		
-		// get all comments
-		$comments = $this->db->get_all_comments( $post_ID );
-		
-		
-		
-		// filter out any multipage comments not on this page
-		$comments = $this->_multipage_comment_filter( $comments );
-		//print_r( $comments ); die();
-		
-		
-		
-		// add all comments on the whole page
-		$_comments[] = array_merge(
-		
-			// array of comments with no text signature (whole page)
-			$this->_text_signature_filter( $comments, '' ),
-
-			// array of orphaned comments (now assigned to the whole page)
-			$this->_orphaned_comment_filter( $comments )
-
-		);
-		
-		
-
-		/* 
-		we have an array of text_signatures built when the_content() was called
-		this will be in the order of the paragraphs that they apply to. 
-		
-		HOWEVER:
-		any comments whose paragraphs have signficantly changed will not be picked
-		up by this process - they should have been assigned to the whole page by the
-		_orphaned_comment_filter() method called above
-		*/
-		
-		// get our signatures
-		$_sigs = $this->db->get_text_sigs();
-
-		// do we have any text signatures?
-		if ( count( $_sigs ) > 0 ) {
-		
-			// loop through our signatures
-			foreach( $_sigs AS $text_signature ) {
+		// have we already sorted the comments?
+		if ( !empty( $this->comments_sorted ) ) {
 			
-				// append comments filtered by that signature
-				$_comments[] = $this->_text_signature_filter( $comments, $text_signature );
-				
-			}
-			
+			// --<
+			return $this->comments_sorted;
+		
 		}
-		
-		//var_dump( $_comments );
-
+	
 		// --<
-		return $_comments;
+		return $this->_get_sorted_comments( $post_ID );
 		
 	}
 	
@@ -2304,17 +2314,22 @@ class CommentPress {
 	
 	
 	/** 
-	 * @description: filters the content by tag
+	 * @description: parses the content by tag
 	 * @param string $content the post content
 	 * @param string $tag the tag to filter by
 	 * @return string $content the parsed content
 	 * @todo: 
 	 *
 	 */
-	function _filter_content( $content, $tag = 'p|ul|ol' ) {
+	function _parse_content( $content, $tag = 'p|ul|ol' ) {
 	
-		// don't filter if a password is required
-		if ( post_password_required() ) {
+
+
+		// get our paragraphs
+		$matches = $this->_get_text_matches( $content, $tag );
+		
+		// kick out if we don't have any
+		if( !count( $matches ) ) {
 		
 			// --<
 			return $content;
@@ -2323,70 +2338,35 @@ class CommentPress {
 		
 		
 		
-	
 		// reference our post
 		global $post;
 
 
 
-		// get our paragraphs (needed to split regex into two strings as some IDEs 
-		// don't like PHP closing tags, even they are part of a regex and not actually
-		// closing tags at all) 
-		//preg_match_all( '/<('.$tag.')[^>]*>(.*?)(<\/('.$tag.')>)/', $content, $matches );
-		preg_match_all( '#<('.$tag.')[^>]*?'.'>(.*?)</('.$tag.')>#si', $content, $matches );
-		//print_r( $matches[0] ); print_r( $matches[1] ); exit();
-		
-		// kick out if we don't have any
-		if( !count($matches[0]) ) {
-		
-			// --<
-			return $content;
-			
-		}
-		
-		
-		
-		// init ( array( 'text_signature' => n ), where n is the number of duplicates )
-		$duplicates = array();
+		// get sorted comments and store
+		$this->comments_sorted = $this->_get_sorted_comments( $post->ID );
+		//print_r( $this->comments_sorted ); die();
+	
 
+
+		// we already have our text signatures, so set flag
+		$sig_key = 0;
+		
 		// run through 'em...
-		foreach( $matches[0] AS $paragraph ) {
+		foreach( $matches AS $paragraph ) {
 	  
 			// get a signature for the paragraph
-			$text_signature = $this->_generate_text_signature( $paragraph );
+			$text_signature = $this->text_signatures[ $sig_key ];
 			
-			// do we have one already?
-			if ( in_array( $text_signature, $this->text_signatures ) ) {
-			
-				// is it in the duplicates array?
-				if ( array_key_exists( $text_signature, $duplicates ) ) {
-				
-					// add one
-					$duplicates[ $text_signature ]++;
-				
-				} else {
-				
-					// add it
-					$duplicates[ $text_signature ] = 1;
-				
-				}
-				
-				// add number to end of text sig
-				$text_signature .= '_'.$duplicates[ $text_signature ];
-				
-			}
-			
-			// add to signatures array
-			$this->text_signatures[] = $text_signature;
+			// increment
+			$sig_key++;
 			
 			// get comment count
-			$comment_count = $this->_text_signature_count( $post->ID, $text_signature );
-			
-			// add to count comment counter array
-			$this->comment_counts[] = $comment_count;
+			// NB: the sorted array contains whole page as key 0, so we use the incremented value
+			$comment_count = count( $this->comments_sorted[ $sig_key ] );
 			
 			// get comment icon
-			$commenticon = $this->display->get_icon( $comment_count, $text_signature, 'auto', count( $this->text_signatures ) );
+			$commenticon = $this->display->get_icon( $comment_count, $text_signature, 'auto', $sig_key );
 			
 			// set pattern by first tag
 			switch ( substr( $paragraph, 0 , 2 ) ) {
@@ -2480,7 +2460,7 @@ class CommentPress {
 			$replace = array( $this->display->get_para_tag( $text_signature, $commenticon, $tag ) );
 			$block = preg_replace( $pattern, $replace, $paragraph );
 			
-			// NOTE: because str_replace() has no limit to the replacements, I am switching to
+			// NB: because str_replace() has no limit to the replacements, I am switching to
 			// preg_replace() because that does have a limit
 			//$content = str_replace( $paragraph, $block, $content );
 			
@@ -2545,16 +2525,150 @@ class CommentPress {
 
 
 	/** 
-	 * @description: filters the content by comment block
+	 * @description: splits the content into an array by tag
 	 * @param string $content the post content
-	 * @return string $content the parsed content
-	 * @todo: this is probably mighty slow - review preg_replace patterns
+	 * @param string $tag the tag to filter by
+	 * @return array $matches the ordered array of matched items
+	 * @todo: 
 	 *
 	 */
-	function _filter_comment_blocks( $content ) {
+	function _get_text_matches( $content, $tag = 'p|ul|ol' ) {
+	
+		// get our paragraphs (needed to split regex into two strings as some IDEs 
+		// don't like PHP closing tags, even they are part of a regex and not actually
+		// closing tags at all) 
+		//preg_match_all( '/<('.$tag.')[^>]*>(.*?)(<\/('.$tag.')>)/', $content, $matches );
+		preg_match_all( '#<('.$tag.')[^>]*?'.'>(.*?)</('.$tag.')>#si', $content, $matches );
+		//print_r( $matches[0] ); print_r( $matches[1] ); exit();
+		
+		// kick out if we don't have any
+		if( !empty($matches[0]) ) {
+		
+			// --<
+			return $matches[0];
+			
+		} else {
+		
+			// --<
+			return array();
+		
+		}
+		
+	}
+	
+	
+	
+		
+		
+		
+	/** 
+	 * @description: parses the content by tag and builds text signatures array
+	 * @param string $content the post content
+	 * @param string $tag the tag to filter by
+	 * @return array $text_signatures the ordered array of text signatures
+	 * @todo: 
+	 *
+	 */
+	function _generate_text_signatures( $content, $tag = 'p|ul|ol' ) {
 	
 		// don't filter if a password is required
 		if ( post_password_required() ) {
+		
+			// store text sigs array in global
+			$this->db->set_text_sigs( $this->text_signatures );
+
+			// --<
+			return $this->text_signatures;
+			
+		}
+		
+		
+		
+	
+		// get our paragraphs
+		$matches = $this->_get_text_matches( $content, $tag );
+		
+		// kick out if we don't have any
+		if( !count( $matches ) ) {
+		
+			// store text sigs array in global
+			$this->db->set_text_sigs( $this->text_signatures );
+
+			// --<
+			return $this->text_signatures;
+			
+		}
+		
+		
+		
+		// init ( array( 'text_signature' => n ), where n is the number of duplicates )
+		$duplicates = array();
+
+		// run through 'em...
+		foreach( $matches AS $paragraph ) {
+	  
+			// get a signature for the paragraph
+			$text_signature = $this->_generate_text_signature( $paragraph );
+			
+			// do we have one already?
+			if ( in_array( $text_signature, $this->text_signatures ) ) {
+			
+				// is it in the duplicates array?
+				if ( array_key_exists( $text_signature, $duplicates ) ) {
+				
+					// add one
+					$duplicates[ $text_signature ]++;
+				
+				} else {
+				
+					// add it
+					$duplicates[ $text_signature ] = 1;
+				
+				}
+				
+				// add number to end of text sig
+				$text_signature .= '_'.$duplicates[ $text_signature ];
+				
+			}
+			
+			// add to signatures array
+			$this->text_signatures[] = $text_signature;
+			
+		}
+		
+		
+		
+		// store text sigs array in global
+		$this->db->set_text_sigs( $this->text_signatures );
+
+
+
+		// --<
+		return $this->text_signatures;
+
+	}
+	
+
+
+
+
+
+
+	/** 
+	 * @description: parse the content by line (<br />)
+	 * @param string $content the post content
+	 * @return string $content the parsed content
+	 * @todo: 
+	 *
+	 */
+	function _parse_lines( $content ) {
+	
+		// get our lines
+		$matches = $this->_get_line_matches( $content );
+		//print_r( $matches ); die();
+		
+		// kick out if we don't have any
+		if( !count( $matches ) ) {
 		
 			// --<
 			return $content;
@@ -2566,6 +2680,394 @@ class CommentPress {
 		// reference our post
 		global $post;
 
+
+
+		// get sorted comments and store
+		$this->comments_sorted = $this->_get_sorted_comments( $post->ID );
+		//print_r( $this->comments_sorted ); die();
+	
+
+
+		// we already have our text signatures, so set flag
+		$sig_key = 0;
+		
+		// init our content array
+		$content_array = array();
+	
+
+
+		// run through 'em...
+		foreach( $matches AS $paragraph ) {
+
+			// is there any content?
+			if ( $paragraph != '' ) {
+				
+				// check for paras
+				if ( $paragraph == '<p>' OR $paragraph == '</p>' ) {
+				
+					// do we want to allow commenting on verses?
+				
+					// add to content array
+					$content_array[] = $paragraph;
+	
+				} else {
+				
+					// line commenting
+				
+					// get a signature for the paragraph
+					$text_signature = $this->text_signatures[ $sig_key ];
+					
+					// increment
+					$sig_key++;
+					
+					// get comment count
+					// NB: the sorted array contains whole page as key 0, so we use the incremented value
+					$comment_count = count( $this->comments_sorted[ $sig_key ] );
+					
+					// get comment icon
+					$commenticon = $this->display->get_icon( $comment_count, $text_signature, 'line', $sig_key );
+					
+					// get comment icon markup
+					$icon_html = $this->display->get_para_tag( $text_signature, $commenticon, 'span' );
+					
+					// assign icons to blocks
+					$paragraph = $icon_html.$paragraph;
+					
+					// add to content array
+					$content_array[] = $paragraph;
+	
+				}
+				
+			}
+			
+		}
+
+		//print_r( $this->text_signatures ); //die();
+		//print_r( $duplicates ); die();
+		//die();
+	
+
+		
+		// rejoin and exclude quicktag
+		$content = implode( '', $content_array );
+	
+
+
+		// --<
+		return $content;
+
+	}
+	
+
+
+
+
+
+
+	/** 
+	 * @description: splits the content into an array by line
+	 * @param string $content the post content
+	 * @param string $tag the tag to filter by
+	 * @return array $matches the ordered array of matched items
+	 * @todo: 
+	 *
+	 */
+	function _get_line_matches( $content ) {
+		
+		// wrap all lines with spans
+		
+		// get all instances
+		$pattern = array(
+		
+			'/<br>/', 
+			'/<br\/>/', 
+			'/<br \/>/', 
+			'/<br>\n/', 
+			'/<br\/>\n/', 
+			'/<br \/>\n/', 
+			'/<p>/', 
+			'/<\/p>/'
+			
+		);
+		
+		// define replacements
+		$replace = array( 
+		
+			'</span><br>', 
+			'</span><br/>', 
+			'</span><br />', 
+			'<br>'."\n".'<span class="cp-line">', 
+			'<br/>'."\n".'<span class="cp-line">', 
+			'<br />'."\n".'<span class="cp-line">', 
+			'<p><span class="cp-line">', 
+			'</span></p>' 
+			
+		);
+		
+		// do replacement
+		$content = preg_replace( $pattern, $replace, $content );
+		
+		/*
+		print_r( array(
+		
+			'content' => $content,
+		
+		) ); die();
+		*/
+		
+
+
+		// explode by <span>
+		$output_array = explode( '<span class="cp-line">', $content );
+		//print_r( $output_array ); die();
+		
+		// kick out if we have an empty array
+		if ( empty( $output_array ) ) {
+		
+			// --<
+			return array();
+		
+		}
+		
+		
+		
+		// --<
+		return $output_array;
+		
+	}
+	
+	
+	
+		
+		
+	/** 
+	 * @description: parses the content by line (<br />) and builds text signatures array
+	 * @param string $content the post content
+	 * @return array $text_signatures the ordered array of text signatures
+	 * @todo: 
+	 *
+	 */
+	function _generate_line_signatures( $content ) {
+	
+		// don't filter if a password is required
+		if ( post_password_required() ) {
+		
+			// store text sigs array in global
+			$this->db->set_text_sigs( $this->text_signatures );
+
+			// --<
+			return $this->text_signatures;
+			
+		}
+		
+		
+		
+		// wrap all lines with spans
+		
+
+
+		// explode by <span>
+		$output_array = $this->_get_line_matches( $content );
+		//print_r( $output_array ); die();
+		
+		// kick out if we have an empty array
+		if ( empty( $output_array ) ) {
+		
+			// store text sigs array in global
+			$this->db->set_text_sigs( $this->text_signatures );
+
+			// --<
+			return $this->text_signatures;
+			
+		}
+		
+		
+		
+		// reference our post
+		global $post;
+
+		// init our content array
+		$content_array = array();
+
+		// init ( array( 'text_signature' => n ), where n is the number of duplicates )
+		$duplicates = array();
+
+
+
+		// run through 'em...
+		foreach( $output_array AS $paragraph ) {
+		
+			// is there any content?
+			if ( $paragraph != '' ) {
+				
+				// check for paras
+				if ( $paragraph == '<p>' OR $paragraph == '</p>' ) {
+				
+					// do we want to allow commenting on verses?
+				
+				} else {
+				
+					// line commenting
+				
+					// get a signature for the paragraph
+					$text_signature = $this->_generate_text_signature( $paragraph );
+					
+					// do we have one already?
+					if ( in_array( $text_signature, $this->text_signatures ) ) {
+					
+						// is it in the duplicates array?
+						if ( array_key_exists( $text_signature, $duplicates ) ) {
+						
+							// add one
+							$duplicates[ $text_signature ]++;
+						
+						} else {
+						
+							// add it
+							$duplicates[ $text_signature ] = 1;
+						
+						}
+						
+						// add number to end of text sig
+						$text_signature .= '_'.$duplicates[ $text_signature ];
+						
+					}
+					
+					// add to signatures array
+					$this->text_signatures[] = $text_signature;
+					
+				}
+				
+			}
+			
+		}
+
+		//print_r( $this->text_signatures ); //die();
+		//print_r( $duplicates ); die();
+		//die();
+	
+
+
+		// store text sigs array in global
+		$this->db->set_text_sigs( $this->text_signatures );
+
+
+
+		// --<
+		return $this->text_signatures;
+
+	}
+	
+
+
+
+
+
+
+	/** 
+	 * @description: parses the content by comment block
+	 * @param string $content the post content
+	 * @return string $content the parsed content
+	 * @todo: this is probably mighty slow - review preg_replace patterns
+	 *
+	 */
+	function _parse_blocks( $content ) {
+	
+		// get our lines
+		$matches = $this->_get_block_matches( $content );
+		//print_r( $matches ); die();
+		
+		// kick out if we don't have any
+		if( !count( $matches ) ) {
+		
+			// --<
+			return $content;
+			
+		}
+		
+		
+		
+		// reference our post
+		global $post;
+
+		
+
+		// get sorted comments and store
+		$this->comments_sorted = $this->_get_sorted_comments( $post->ID );
+		//print_r( $this->comments_sorted ); die();
+	
+
+
+		// we already have our text signatures, so set flag
+		$sig_key = 0;
+		
+		// init content array
+		$content_array = array();
+		
+		
+		
+		// run through 'em...
+		foreach( $matches AS $paragraph ) {
+		
+			// is there any content?
+			if ( $paragraph != '' ) {
+	  
+				// get a signature for the paragraph
+				$text_signature = $this->text_signatures[ $sig_key ];
+				
+				// increment
+				$sig_key++;
+				
+				// get comment count
+				// NB: the sorted array contains whole page as key 0, so we use the incremented value
+				$comment_count = count( $this->comments_sorted[ $sig_key ] );
+				
+				// get comment icon
+				$commenticon = $this->display->get_icon( $comment_count, $text_signature, 'block', $sig_key );
+				
+				// get comment icon markup
+				$icon_html = $this->display->get_para_tag( $text_signature, $commenticon, 'div' );
+				
+				// assign icons to blocks
+				$paragraph = $icon_html.$paragraph.'</div>'."\n\n\n\n";
+				
+				// add to content array
+				$content_array[] = $paragraph;
+				
+			}
+			
+		}
+
+		//print_r( $this->text_signatures ); //die();
+		//print_r( $duplicates ); die();
+	
+
+		
+		// rejoin and exclude quicktag
+		$content = implode( '', $content_array );
+	
+
+
+		// --<
+		return $content;
+
+	}
+	
+
+
+
+
+
+
+	/** 
+	 * @description: splits the content into an array by block
+	 * @param string $content the post content
+	 * @param string $tag the tag to filter by
+	 * @return array $matches the ordered array of matched items
+	 * @todo: 
+	 *
+	 */
+	function _get_block_matches( $content ) {
 		
 		// wp_texturize() does an okay job with creating paragraphs, but comments tend
 		// to screw things up. let's try and fix...
@@ -2681,19 +3183,58 @@ class CommentPress {
 		
 		
 		
-		// init our content array
-		$content_array = array();
-	
-
-
 		// explode by <p> version to temp array
 		$output_array = explode( '<p><'.'!--commentblock--></p>', $content );
+		
+		// kick out if we have an empty array
+		if ( empty( $output_array ) ) {
+		
+			// --<
+			return array();
+		
+		}
+		
+		
+		
+		// --<
+		return $output_array;
+		
+	}
+	
+	
+	
+		
+		
+	/** 
+	 * @description: parses the content by comment block and generates text signature array
+	 * @param string $content the post content
+	 * @return array $text_signatures the ordered array of text signatures
+	 * @todo: this is probably mighty slow - review preg_replace patterns
+	 *
+	 */
+	function _generate_block_signatures( $content ) {
+	
+		// don't filter if a password is required
+		if ( post_password_required() ) {
+		
+			// store text sigs array in global
+			$this->db->set_text_sigs( $this->text_signatures );
+
+			// --<
+			return $this->text_signatures;
+			
+		}
+		
+		
+		
+		// get blocks array
+		$matches = $this->_get_block_matches( $content );
 		
 		// init ( array( 'text_signature' => n ), where n is the number of duplicates )
 		$duplicates = array();
 
 		// run through 'em...
-		foreach( $output_array AS $paragraph ) {
+		foreach( $matches AS $paragraph ) {
 		
 			// is there any content?
 			if ( $paragraph != '' ) {
@@ -2725,209 +3266,22 @@ class CommentPress {
 				// add to signatures array
 				$this->text_signatures[] = $text_signature;
 				
-				// get comment count
-				$comment_count = $this->_text_signature_count( $post->ID, $text_signature );
-				
-				// add to comment counter array
-				$this->comment_counts[] = $comment_count;
-				
-				// get comment icon
-				$commenticon = $this->display->get_icon( $comment_count, $text_signature, 'block', count( $this->text_signatures ) );
-				
-				// get comment icon markup
-				$icon_html = $this->display->get_para_tag( $text_signature, $commenticon, 'div' );
-				
-				// assign icons to blocks
-				$paragraph = $icon_html.$paragraph.'</div>'."\n\n\n\n";
-				
-				// add to content array
-				$content_array[] = $paragraph;
-				
 			}
 			
 		}
 
-		//print_r( $this->text_signatures ); //die();
+		//print_r( $this->text_signatures ); die();
 		//print_r( $duplicates ); die();
 	
 
-		
-		// rejoin and exclude quicktag
-		$content = implode( '', $content_array );
-	
+
+		// store text sigs array in global
+		$this->db->set_text_sigs( $this->text_signatures );
+
 
 
 		// --<
-		return $content;
-
-	}
-	
-
-
-
-
-
-
-	/** 
-	 * @description: filters the content by line (<br />)
-	 * @param string $content the post content
-	 * @return string $content the parsed content
-	 * @todo: 
-	 *
-	 */
-	function _filter_content_by_line( $content ) {
-	
-		// don't filter if a password is required
-		if ( post_password_required() ) {
-		
-			// --<
-			return $content;
-			
-		}
-		
-		
-		
-		// reference our post
-		global $post;
-
-		
-		// wrap all lines with spans
-		
-		// get all instances
-		$pattern = array(
-		
-			'/<br>/', 
-			'/<br\/>/', 
-			'/<br \/>/', 
-			'/<br>\n/', 
-			'/<br\/>\n/', 
-			'/<br \/>\n/', 
-			'/<p>/', 
-			'/<\/p>/'
-			
-		);
-		
-		// define replacements
-		$replace = array( 
-		
-			'</span><br>', 
-			'</span><br/>', 
-			'</span><br />', 
-			'<br>'."\n".'<span class="cp-line">', 
-			'<br/>'."\n".'<span class="cp-line">', 
-			'<br />'."\n".'<span class="cp-line">', 
-			'<p><span class="cp-line">', 
-			'</span></p>' 
-			
-		);
-		
-		// do replacement
-		$content = preg_replace( $pattern, $replace, $content );
-		
-		/*
-		print_r( array(
-		
-			'content' => $content,
-		
-		) ); die();
-		*/
-		
-
-
-		// init our content array
-		$content_array = array();
-	
-
-
-		// explode by <span>
-		$output_array = explode( '<span class="cp-line">', $content );
-		//print_r( $output_array ); die();
-		
-		// init ( array( 'text_signature' => n ), where n is the number of duplicates )
-		$duplicates = array();
-
-		// run through 'em...
-		foreach( $output_array AS $paragraph ) {
-		
-			// is there any content?
-			if ( $paragraph != '' ) {
-				
-				// check for paras
-				if ( $paragraph == '<p>' OR $paragraph == '</p>' ) {
-				
-					// do we want to allow commenting on verses?
-				
-					// add to content array
-					$content_array[] = $paragraph;
-	
-				} else {
-				
-					// line commenting
-				
-					// get a signature for the paragraph
-					$text_signature = $this->_generate_text_signature( $paragraph );
-					
-					// do we have one already?
-					if ( in_array( $text_signature, $this->text_signatures ) ) {
-					
-						// is it in the duplicates array?
-						if ( array_key_exists( $text_signature, $duplicates ) ) {
-						
-							// add one
-							$duplicates[ $text_signature ]++;
-						
-						} else {
-						
-							// add it
-							$duplicates[ $text_signature ] = 1;
-						
-						}
-						
-						// add number to end of text sig
-						$text_signature .= '_'.$duplicates[ $text_signature ];
-						
-					}
-					
-					// add to signatures array
-					$this->text_signatures[] = $text_signature;
-					
-					// get comment count
-					$comment_count = $this->_text_signature_count( $post->ID, $text_signature );
-					
-					// add to comment counter array
-					$this->comment_counts[] = $comment_count;
-					
-					// get comment icon
-					$commenticon = $this->display->get_icon( $comment_count, $text_signature, 'line', count( $this->text_signatures ) );
-					
-					// get comment icon markup
-					$icon_html = $this->display->get_para_tag( $text_signature, $commenticon, 'span' );
-					
-					// assign icons to blocks
-					$paragraph = $icon_html.$paragraph; //.'</div>'."\n\n\n\n";
-					
-					// add to content array
-					$content_array[] = $paragraph;
-	
-				}
-				
-			}
-			
-		}
-
-		//print_r( $this->text_signatures ); //die();
-		//print_r( $duplicates ); die();
-		//die();
-	
-
-		
-		// rejoin and exclude quicktag
-		$content = implode( '', $content_array );
-	
-
-
-		// --<
-		return $content;
+		return $this->text_signatures;
 
 	}
 	
@@ -3216,6 +3570,7 @@ class CommentPress {
 		$words = explode( ' ', ereg_replace( '[^A-Za-z]', ' ', html_entity_decode($text) ) );
 		
 		// store unique words
+		// NB: this may be a mistake for poetry, which can use any words in any order
 		$unique_words = array_unique( $words );
 		
 		
@@ -3236,7 +3591,7 @@ class CommentPress {
 		
 		
 		
-		// get sig - think this through
+		// get sig - think this through (not used, as position always null
 		$sig = ($position) ? 
 				$position . ':' . $text_signature : 
 				$text_signature;
@@ -3254,39 +3609,6 @@ class CommentPress {
 	
 	
 	
-	/** 
-	 * @description: count approved comments with a particular text signature
-	 * @param integer $post_ID the ID of the post
-	 * @param string $text_signature the text signature
-	 * @return integer $comment_count the number of comments with a text signature in a post
-	 * @todo: 
-	 *
-	 */
-	function _text_signature_count( $post_ID, $text_signature ) {
-	
-		// get comments
-		$comments = $this->db->get_approved_comments( $post_ID );
-		
-		// filter out multipage comments
-		$filtered_by_page = $this->_multipage_comment_filter( $comments );
-		
-		// filter all but those with the text sig we want
-		$filtered = $this->_text_signature_filter( $filtered_by_page, $text_signature );
-		
-		// count them
-		$comment_count = count( $filtered );
-		
-		// --<
-		return ( $comment_count > 0) ? $comment_count : 0;	
-	
-	}
-	
-
-
-
-
-
-
 	/** 
 	 * @description: filter comments to find comments for the current page of a multipage post
 	 * @param array $comments array of comment objects
@@ -3306,7 +3628,7 @@ class CommentPress {
 		$filtered = array();
 
 		// kick out if no comments
-		if( !is_array( $comments ) ) {
+		if( !is_array( $comments ) OR empty( $comments ) ) {
 		
 			// --<
 			return $filtered;
@@ -3372,60 +3694,74 @@ class CommentPress {
 
 
 	/** 
-	 * @description: filter comments by text signature
-	 * @param array $comments array of comment objects
-	 * @param string $text_signature the text signature
-	 * @param integer $confidence the confidence level of paragraph identity - default 90%
-	 * @return array $filtered array of comments with a text signature
+	 * @description: get comments sorted by text signature and paragraph
+	 * @param integer $post_ID the ID of the post
+	 * @return array $_comments
 	 * @todo: 
 	 *
 	 */
-	function _text_signature_filter( $comments, $text_signature, $confidence = 90 ) {
-	  
-	  	// init return
-		$filtered = array();
+	function _get_sorted_comments( $post_ID ) {
+	
+		// init return
+		$_comments = array();
+		
+		
+	
+		// get all comments
+		$comments = $this->comments_all;
+		
+		
+		
+		// filter out any multipage comments not on this page
+		$comments = $this->_multipage_comment_filter( $comments );
+		//print_r( $comments ); die();
+		
+		
+		
+		// get our signatures
+		$_sigs = $this->db->get_text_sigs();
+		//print_r( $_sigs ); die();
+		
+		// assign comments to text signatures
+		$_assigned = $this->_assign_comments( $comments, $_sigs );
+		
+		// NB: $_assigned is an array with sigs as keys and array of comments as value
+		// it may be empty...
+		
+		// we must have text signatures...
+		if ( !empty( $_sigs ) ) {
+		
 
-		// kick out if no comments
-		if( !is_array( $comments ) ) {
+
+			// if we have any comments on the whole page...
+			if ( isset( $_assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ] ) ) {
 		
-			// --<
-			return $filtered;
-		}
-		
-		
-		
-		// run through our comments...
-		foreach( $comments AS $comment ) {
-		
-			/* 
-			NOTE: 
-			If both strings are empty, similar_text returns a score of 0. Therefore, 
-			we cannot use similar_text this to filter comments for the whole page, 
-			whose signature is empty. So...
-			*/
-			
-			// test for empty strings
-			if ( $text_signature == '' ) {
-			
-				// test for empty comment text signature
-				if ( is_null( $comment->comment_text_signature ) OR $comment->comment_text_signature == '' ) {
-			
-					// it's a match
-					$filtered[] = $comment;
+				// add them first
+				$_comments[] = $_assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ];
 				
-				}
-			
 			} else {
 			
-				// test for empty comment text signature
-				if ( !is_null( $comment->comment_text_signature ) AND $comment->comment_text_signature != '' ) {
+				// append empty array
+				$_comments[] = array();
+			
+			}
+			
+		
+
+			// then add  in the order of our text signatures
+			foreach( $_sigs AS $text_signature ) {
+			
+				// if we have any assigned...
+				if ( isset( $_assigned[ $text_signature ] ) ) {
+			
+					// append assigned comments
+					$_comments[] = $_assigned[ $text_signature ];
+					
+				} else {
 				
-					// compare strings...
-					similar_text( $comment->comment_text_signature, $text_signature, $score );
-					
-					// add to filtered array if it looks unchanged
-					if( $score >= $confidence ) { $filtered[] = $comment; }
-					
+					// append empty array
+					$_comments[] = array();
+				
 				}
 				
 			}
@@ -3433,98 +3769,132 @@ class CommentPress {
 		}
 		
 		
-	
+		
+		//print_r( $_comments ); die();
+
 		// --<
-		return $filtered;
+		return $_comments;
 		
 	}
 	
-
-
-
-
-
-
+	
+	
+	
+	
+	
+	
 	/** 
-	 * @description: filter comments to find comments with no current paragraph
+	 * @description: filter comments by text signature
 	 * @param array $comments array of comment objects
+	 * @param array $text_signatures array of text signatures
 	 * @param integer $confidence the confidence level of paragraph identity - default 90%
-	 * @return array $filtered array of comments with no existing text signature
+	 * @return array $assigned array with text signatures as keys and array of comments as values
 	 * @todo: 
 	 *
 	 */
-	function _orphaned_comment_filter( $comments, $confidence = 90 ) {
+	function _assign_comments( $comments, $text_signatures, $confidence = 90 ) {
 	  
-	  	// init return
-		$filtered = array();
+	  	// init returned array
+	  	// NB: we use a very unlikely key for page-level comments: WHOLE_PAGE_OR_POST_COMMENTS
+		$assigned = array();
 
 		// kick out if no comments
-		if( !is_array( $comments ) ) {
+		if( !is_array( $comments ) OR empty( $comments ) ) {
 		
 			// --<
-			return $filtered;
-
+			return $assigned;
 		}
 		
 		
 		
-		// get post-paging global
-		global $multipage; 
+		// kick out if no text_signatures
+		if( !is_array( $text_signatures ) OR empty( $text_signatures ) ) {
 		
-		// discard orphans for now...
-		if ( $multipage ) {
-
 			// --<
-			return $filtered;
-
+			return $assigned;
 		}
 		
 		
 		
-		// get text signatures
-		$_sigs = $this->db->get_text_sigs();
+		/*
+		print_r( array( 
+		
+			'comments' => $comments,
+			'sigs' => $text_signatures 
+		
+		) ); die();
+		*/
 		
 		// run through our comments...
 		foreach( $comments AS $comment ) {
 		
-			// test for empty signature
-			if ( $comment->comment_text_signature != '' ) {
+			// test for empty comment text signature
+			if ( !is_null( $comment->comment_text_signature ) AND $comment->comment_text_signature != '' ) {
 			
-				// init
-				$matched = false;
+				// do we have an exact match in the text sigs array?
+				// NB: this will work, because we're already ensuring identical sigs are made unique
+				if ( in_array( $comment->comment_text_signature, $text_signatures ) ) {
+					
+					// yes, assign to that key
+					$assigned[ $comment->comment_text_signature ][] = $comment;
 				
-				// if we have some text signatures
-				if ( count ( $_sigs ) > 0 ) {
+				} else {
 				
-					// run through text_signatures
-					foreach( $_sigs AS $text_signature ) {
+					// init possibles array
+					$possibles = array();
+				
+					// find the nearest matching text signature
+					foreach( $text_signatures AS $text_signature ) {
 					
 						// compare strings...
 						similar_text( $comment->comment_text_signature, $text_signature, $score );
 						
-						// flag that we found a match if we do
-						if( $score >= $confidence ) { $matched = true; }
+						//print_r( $score.'<br>' ); 
 						
-					}
+						// add to possibles array if it passes
+						if( $score >= $confidence ) { $possibles[ $text_signature ] = $score; }
 					
+					}
+					//die();
+					
+					// did we get any?
+					if ( !empty( $possibles ) ) {
+						
+						// sort them by score
+						arsort( $possibles );
+						//print_r( array_keys( $possibles ) ); die();
+						
+						// let's use the sig with the highest score
+						$highest = array_pop( array_keys( $possibles ) );
+					
+						// assign comment to that key
+						$assigned[ $highest ][] = $comment;
+					
+					} else {
+					
+						// we have an orphaned comment - assign to page
+						$assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ][] = $comment;
+					
+					}
+				
 				}
 				
-				// if we get no match, 
-				if ( !$matched ) {
-				
-					// add to filtered array
-					$filtered[] = $comment;
-				
-				}
-				
+			} else {
+			
+				// we have comment with no text sig - assign to page
+				$assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ][] = $comment;
+			
 			}
-		
+			
 		}
 		
+		// let's have a look
+		//print_r( $assigned ); die();
 		
-	
+		
+		
 		// --<
-		return $filtered;
+		return $assigned;
 		
 	}
 	
