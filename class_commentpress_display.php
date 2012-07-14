@@ -2611,12 +2611,10 @@ Below are extra options for changing how the theme looks.</p>
 	 */
 	function _test_for_mobile() {
 	
-		// NOTE: the following lists of phones are derived from WordPress Mobile Edition
-		// <http://crowdfavorite.com/wordpress/> We probably need to investigate if there
-		// are licencing issues here - and if so, where to get a similar list.
-		
 		// do we have a user agent?
 		if ( isset( $_SERVER["HTTP_USER_AGENT"] ) ) {
+		
+			// NOTE: keep an eye on touchphone agents
 		
 			// get agent
 			$agent = $_SERVER["HTTP_USER_AGENT"];
@@ -2660,78 +2658,12 @@ Below are extra options for changing how the theme looks.</p>
 			}
 			
 			// is it a tablet?
-			if ( $detect->isIpad() OR $detect->isAndroidtablet() OR $detect->isBlackberrytablet() ) {
+			if ( $detect->isTablet() ) {
 			
 				// set flag
 				$this->is_tablet = true;
 
 			}
-			
-			/*
-			
-			// REPLACED
-			
-			// init mobile array
-			$mobiles = array(
-				'2.0 MMP',
-				'240x320',
-				'400X240',
-				'AvantGo',
-				'BlackBerry',
-				'Blazer',
-				'Cellphone',
-				'Danger',
-				'DoCoMo',
-				'Elaine/3.0',
-				'EudoraWeb',
-				'Googlebot-Mobile',
-				'hiptop',
-				'IEMobile',
-				'KYOCERA/WX310K',
-				'LG/U990',
-				'MIDP-2.',
-				'MMEF20',
-				'MOT-V',
-				'NetFront',
-				'Newt',
-				'Nintendo Wii',
-				'Nitro', // Nintendo DS
-				'Nokia',
-				'Opera Mini',
-				'Palm',
-				'PlayStation Portable',
-				'portalmmm',
-				'Proxinet',
-				'ProxiNet',
-				'SHARP-TQ-GX10',
-				'SHG-i900',
-				'Small',
-				'SonyEricsson',
-				'Symbian OS',
-				'SymbianOS',
-				'TS21i-10',
-				'UP.Browser',
-				'UP.Link',
-				'webOS', // Palm Pre, etc.
-				'Windows CE',
-				'WinWAP',
-				'YahooSeeker/M1A1-R2D2',
-			);
-		
-			// loop through them
-			foreach( $mobiles AS $phone ) {
-
-				// test for its name in the agent string
-				if ( strpos( $agent, $phone ) !== false ) {
-				
-					// set flag
-					$this->is_mobile = true;
-				
-				}
-			
-			}
-			
-			*/
 			
 		}
 
