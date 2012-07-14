@@ -3584,8 +3584,11 @@ class CommentPress {
 			// add first letter
 			$text_signature .= substr( $word, 0, 1 );
 			
-			// limit to 254 chars
-			if( $key > 254 ) { break; }
+			// limit to 250 chars
+			// NB: this is because we have changed the format of text signatures by adding numerals
+			// when there are duplicates. Duplicates add at least 2 characters, so there is the 
+			// (admittedly remote) possibility of exceeding the varchar(255) character limit.
+			if( $key > 250 ) { break; }
 			
 		}
 		
