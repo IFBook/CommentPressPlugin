@@ -68,7 +68,7 @@ class CommentPressDisplay {
 	 * @todo: 
 	 *
 	 */
-	function CommentPressDisplay( $parent_obj ) {
+	function __construct( $parent_obj ) {
 	
 		// store reference to parent
 		$this->parent_obj = $parent_obj;
@@ -76,6 +76,29 @@ class CommentPressDisplay {
 		// init
 		$this->_init();
 
+		// --<
+		return $this;
+
+	}
+
+
+
+
+
+
+	/**
+	 * @description: PHP 4 constructor
+	 */
+	function CommentPressDisplay( $parent_obj ) {
+		
+		// is this php5?
+		if ( version_compare( PHP_VERSION, "5.0.0", "<" ) ) {
+		
+			// call php5 constructor
+			$this->__construct( $parent_obj );
+			
+		}
+		
 		// --<
 		return $this;
 
