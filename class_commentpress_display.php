@@ -370,12 +370,12 @@ class CommentPressDisplay {
 
 
 	/** 
-	 * @description: get built-in TinyMCE scripts from Wordpress Includes directory
-	 * @return string $scripts
+	 * @description: test if TinyMCE is allowed
+	 * @return boolean $allowed
 	 * @todo: 
 	 *
 	 */
-	function get_tinymce() {
+	function is_tinymce_allowed() {
 	
 		// check option
 		if ( 
@@ -386,7 +386,7 @@ class CommentPressDisplay {
 		) {
 		
 			// --<
-			return;
+			return false;
 		
 		}
 		
@@ -394,6 +394,34 @@ class CommentPressDisplay {
 		
 		// don't return TinyMCE for touchscreens, mobile phones or tablets
 		if ( $this->is_mobile_touch OR $this->is_mobile OR $this->is_tablet ) {
+		
+			// --<
+			return false;
+		
+		}
+		
+		
+		
+		// --<
+		return true;
+		
+	}
+	
+	
+	
+		
+		
+		
+	/** 
+	 * @description: get built-in TinyMCE scripts from Wordpress Includes directory
+	 * @return string $scripts
+	 * @todo: 
+	 *
+	 */
+	function get_tinymce() {
+	
+		// check if we can
+		if ( !$this->is_tinymce_allowed() ) {
 		
 			// --<
 			return;
@@ -418,20 +446,6 @@ class CommentPressDisplay {
 				
 				// for WP 3.2+
 				if ( version_compare( $wp_version, '3.2', '>=' ) ) {
-					
-					// predefine some settings
-					$settings = array(
-					
-						'editor_class' => 'comment',
-						'elements' => 'comment',
-						'mode' => 'exact',
-						'editor_selector' => null,
-						'textarea_rows' => 3
-						
-					);
-			
-					// use method adapted from WP core
-					//$this->_get_tinymce( $settings );
 					
 					// don't need settings
 					$this->_get_tinymce();
