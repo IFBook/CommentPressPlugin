@@ -68,7 +68,7 @@ class CommentPressDisplay {
 	 * @todo: 
 	 *
 	 */
-	function CommentPressDisplay( $parent_obj ) {
+	function __construct( $parent_obj ) {
 	
 		// store reference to parent
 		$this->parent_obj = $parent_obj;
@@ -76,6 +76,29 @@ class CommentPressDisplay {
 		// init
 		$this->_init();
 
+		// --<
+		return $this;
+
+	}
+
+
+
+
+
+
+	/**
+	 * @description: PHP 4 constructor
+	 */
+	function CommentPressDisplay( $parent_obj ) {
+		
+		// is this php5?
+		if ( version_compare( PHP_VERSION, "5.0.0", "<" ) ) {
+		
+			// call php5 constructor
+			$this->__construct( $parent_obj );
+			
+		}
+		
 		// --<
 		return $this;
 
@@ -347,12 +370,12 @@ class CommentPressDisplay {
 
 
 	/** 
-	 * @description: get built-in TinyMCE scripts from Wordpress Includes directory
-	 * @return string $scripts
+	 * @description: test if TinyMCE is allowed
+	 * @return boolean $allowed
 	 * @todo: 
 	 *
 	 */
-	function get_tinymce() {
+	function is_tinymce_allowed() {
 	
 		// check option
 		if ( 
@@ -363,7 +386,7 @@ class CommentPressDisplay {
 		) {
 		
 			// --<
-			return;
+			return false;
 		
 		}
 		
@@ -371,6 +394,34 @@ class CommentPressDisplay {
 		
 		// don't return TinyMCE for touchscreens, mobile phones or tablets
 		if ( $this->is_mobile_touch OR $this->is_mobile OR $this->is_tablet ) {
+		
+			// --<
+			return false;
+		
+		}
+		
+		
+		
+		// --<
+		return true;
+		
+	}
+	
+	
+	
+		
+		
+		
+	/** 
+	 * @description: get built-in TinyMCE scripts from Wordpress Includes directory
+	 * @return string $scripts
+	 * @todo: 
+	 *
+	 */
+	function get_tinymce() {
+	
+		// check if we can
+		if ( !$this->is_tinymce_allowed() ) {
 		
 			// --<
 			return;
@@ -382,48 +433,44 @@ class CommentPressDisplay {
 		// Is it one of our themes?
 		if ( $this->parent_obj->is_allowed_theme() ) {
 		
-			// test for WordPress version
-			global $wp_version;
+			// test for wp_editor()
+			if ( function_exists( 'wp_editor' ) ) {
 			
-			// for WP 3.2+
-			if ( version_compare( $wp_version, '3.2', '>=' ) ) {
+				// don't include anything - this will be done in the comment form template
+				return;
 				
-				// predefine some settings
-				$settings = array(
-				
-					'editor_class' => 'comment',
-					'elements' => 'comment',
-					'mode' => 'exact',
-					'editor_selector' => null,
-					'textarea_rows' => 3
-					
-				);
-		
-				// use method adapted from WP core
-				//$this->_get_tinymce( $settings );
-				
-				// don't need settings
-				$this->_get_tinymce();
-			
 			} else {
 			
-				// get site HTTP root
-				$site_http_root = trailingslashit( get_bloginfo('wpurl') );
-		
-				// all TinyMCE scripts
-				$scripts .= '<!-- TinyMCE -->
-<script type="text/javascript" src="'.$site_http_root.'wp-includes/js/tinymce/tiny_mce.js"></script>
-<script type="text/javascript" src="'.$site_http_root.'wp-includes/js/tinymce/langs/wp-langs-en.js?ver=20081129"></script>
-'."\n";
-
-				// add our init
-				$scripts .= $this->_get_tinymce_init();
+				// test for WordPress version
+				global $wp_version;
 				
-				// out to browser
-				echo $scripts;
+				// for WP 3.2+
+				if ( version_compare( $wp_version, '3.2', '>=' ) ) {
+					
+					// don't need settings
+					$this->_get_tinymce();
+				
+				} else {
+				
+					// get site HTTP root
+					$site_http_root = trailingslashit( get_bloginfo('wpurl') );
+			
+					// all TinyMCE scripts
+					$scripts .= '<!-- TinyMCE -->
+	<script type="text/javascript" src="'.$site_http_root.'wp-includes/js/tinymce/tiny_mce.js"></script>
+	<script type="text/javascript" src="'.$site_http_root.'wp-includes/js/tinymce/langs/wp-langs-en.js?ver=20081129"></script>
+	'."\n";
+	
+					// add our init
+					$scripts .= $this->_get_tinymce_init();
+					
+					// out to browser
+					echo $scripts;
+					
+				}
 				
 			}
-
+	
 		}
 
 	}
@@ -2588,12 +2635,10 @@ Below are extra options for changing how the theme looks.</p>
 	 */
 	function _test_for_mobile() {
 	
-		// NOTE: the following lists of phones are derived from WordPress Mobile Edition
-		// <http://crowdfavorite.com/wordpress/> We probably need to investigate if there
-		// are licencing issues here - and if so, where to get a similar list.
-		
 		// do we have a user agent?
 		if ( isset( $_SERVER["HTTP_USER_AGENT"] ) ) {
+		
+			// NOTE: keep an eye on touchphone agents
 		
 			// get agent
 			$agent = $_SERVER["HTTP_USER_AGENT"];
@@ -2637,78 +2682,12 @@ Below are extra options for changing how the theme looks.</p>
 			}
 			
 			// is it a tablet?
-			if ( $detect->isIpad() OR $detect->isAndroidtablet() OR $detect->isBlackberrytablet() ) {
+			if ( $detect->isTablet() ) {
 			
 				// set flag
 				$this->is_tablet = true;
 
 			}
-			
-			/*
-			
-			// REPLACED
-			
-			// init mobile array
-			$mobiles = array(
-				'2.0 MMP',
-				'240x320',
-				'400X240',
-				'AvantGo',
-				'BlackBerry',
-				'Blazer',
-				'Cellphone',
-				'Danger',
-				'DoCoMo',
-				'Elaine/3.0',
-				'EudoraWeb',
-				'Googlebot-Mobile',
-				'hiptop',
-				'IEMobile',
-				'KYOCERA/WX310K',
-				'LG/U990',
-				'MIDP-2.',
-				'MMEF20',
-				'MOT-V',
-				'NetFront',
-				'Newt',
-				'Nintendo Wii',
-				'Nitro', // Nintendo DS
-				'Nokia',
-				'Opera Mini',
-				'Palm',
-				'PlayStation Portable',
-				'portalmmm',
-				'Proxinet',
-				'ProxiNet',
-				'SHARP-TQ-GX10',
-				'SHG-i900',
-				'Small',
-				'SonyEricsson',
-				'Symbian OS',
-				'SymbianOS',
-				'TS21i-10',
-				'UP.Browser',
-				'UP.Link',
-				'webOS', // Palm Pre, etc.
-				'Windows CE',
-				'WinWAP',
-				'YahooSeeker/M1A1-R2D2',
-			);
-		
-			// loop through them
-			foreach( $mobiles AS $phone ) {
-
-				// test for its name in the agent string
-				if ( strpos( $agent, $phone ) !== false ) {
-				
-					// set flag
-					$this->is_mobile = true;
-				
-				}
-			
-			}
-			
-			*/
 			
 		}
 

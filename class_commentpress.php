@@ -75,11 +75,34 @@ class CommentPress {
 	 * @todo: 
 	 *
 	 */
-	function CommentPress() {
+	function __construct() {
 	
 		// init
 		$this->_init();
 
+		// --<
+		return $this;
+
+	}
+
+
+
+
+
+
+	/**
+	 * PHP 4 constructor
+	 */
+	function CommentPress() {
+		
+		// is this php5?
+		if ( version_compare( PHP_VERSION, "5.0.0", "<" ) ) {
+		
+			// call php5 constructor
+			$this->__construct();
+			
+		}
+		
 		// --<
 		return $this;
 
@@ -727,18 +750,6 @@ class CommentPress {
 				
 		// only parse posts or pages...	
 		if( ( is_single() OR is_page() OR is_attachment() ) AND !$this->db->is_special_page() ) {
-			
-			
-			
-			/*
-			One of the problems we have here is that we need to build the text signatures array	in order to 
-			assign comment counts to paras/blocks, but this is only built once the_content has been parsed.
-			
-			So, ideally, we'd run through the content once to extract the text signatures, then run through
-			it again to update it with comment counts. This will be a heap easier when we move to an XML parser.
-			
-			In the meantime, well, what?
-			*/
 			
 			
 			
@@ -3312,28 +3323,6 @@ class CommentPress {
 			$return = true;
 		
 		}
-		
-		
-		
-		/*
-		// look for < !--commentblock--> comment
-		if ( preg_match('/<'.'!--commentblock--><br \/>/', $content, $matches) ) {
-		
-			// yep
-			$return = true;
-		
-		}
-		
-		
-		
-		// look for < !--commentblock--> comment
-		if ( preg_match('/<p><'.'!--commentblock--><\/p>/', $content, $matches) ) {
-		
-			// yep
-			$return = true;
-		
-		}
-		*/
 		
 		
 		
