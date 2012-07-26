@@ -40,12 +40,6 @@ class CommentPressDisplay {
 	// parent object reference
 	var $parent_obj;
 	
-	// path to jQuery directory
-	var $jquery_path;
-	
-	// path to jQuery plugins directory
-	var $jquery_plugins_path;
-	
 	// standard mobile browser
 	var $is_mobile = false;
 	
@@ -115,27 +109,41 @@ class CommentPressDisplay {
 	 * @todo: for BP, activate BP child theme
 	 *
 	 */
-	function initialise( $blog_id = null ) {
+	function activate( $blog_id = null ) {
 	
-		// if we're force-activating in multisite and we want the official theme
-		if ( 
+		// get all themes
+		if ( function_exists( 'wp_get_themes' ) ) {
 		
-			CP_PLUGIN_CONTEXT == 'mu_forced' 
-			AND CP_ACTIVATE_THEME === true 
-			
-		) {
+			// get theme data the WP3.4 way...
+			$themes = wp_get_themes();
+			//print_r( $themes ); die();
 		
-			// activate our base theme
-			// NOTE: should this be removed in favour of a Network Admin screen option?
-
-			// get all themes
-			if ( function_exists( 'wp_get_themes' ) ) {
-				$themes = wp_get_themes();
-			} else {
-				$themes = get_themes();
-			}
-			
 			// get Commentpress theme by default, but allow overrides
+			// NB, the key in 3.4+ is the theme *directory name*
+			$target_theme = apply_filters(
+				'cp_forced_theme_name',
+				'commentpress'
+			);
+			
+			// the key is the theme name
+			if ( isset( $themes[ $target_theme ] ) ) {
+				
+				// activate it
+				switch_theme(
+					$themes[ $target_theme ]->template, 
+					$themes[ $target_theme ]->stylesheet
+				);
+		
+			}
+	
+		} else {
+			
+			// use pre-3.4 logic
+			$themes = get_themes();
+			//print_r( $themes ); die();
+		
+			// get Commentpress theme by default, but allow overrides
+			// NB, the key prior to WP 3.4 is the theme's *name*
 			$target_theme = apply_filters(
 				'cp_forced_theme_name',
 				'Commentpress'
@@ -145,7 +153,7 @@ class CommentPressDisplay {
 			if ( isset( $themes[ $target_theme ] ) ) {
 				
 				// activate it
-				switch_theme( 
+				switch_theme(
 					$themes[ $target_theme ]['Template'], 
 					$themes[ $target_theme ]['Stylesheet'] 
 				);
@@ -167,9 +175,10 @@ class CommentPressDisplay {
 	 * @todo: 
 	 *
 	 */
-	function destroy() {
+	function deactivate() {
 	
-		// nothing
+		// switch to default theme
+		switch_theme( WP_DEFAULT_THEME, WP_DEFAULT_THEME );
 
 	}
 
@@ -222,7 +231,7 @@ class CommentPressDisplay {
 		wp_enqueue_script(
 		
 			'jquery_commentpress', 
-			$this->jquery_plugins_path.'jquery.commentpress'.$debug_state.'.js', 
+			plugins_url( 'js/jquery/plugins/jquery.commentpress'.$debug_state.'.js', CP_PLUGIN_FILE ),
 			array('jquery','jquery-form')
 		
 		);
@@ -231,7 +240,7 @@ class CommentPressDisplay {
 		wp_enqueue_script( 
 			
 			'jquery_scrollto', 
-			$this->jquery_plugins_path.'jquery.scrollTo.js', 
+			plugins_url( 'js/jquery/plugins/jquery.scrollTo.js', CP_PLUGIN_FILE ),
 			array('jquery_commentpress') 
 		
 		);
@@ -240,7 +249,7 @@ class CommentPressDisplay {
 		wp_enqueue_script( 
 		
 			'jquery_cookie', 
-			$this->jquery_plugins_path.'jquery.cookie.js', 
+			plugins_url( 'js/jquery/plugins/jquery.cookie.js', CP_PLUGIN_FILE ),
 			array('jquery_commentpress') 
 			
 		);
@@ -249,7 +258,7 @@ class CommentPressDisplay {
 		wp_enqueue_script(
 		
 			'jquery_ui_all', 
-			$this->jquery_path.'jquery-ui-1.8.5.custom.min.js', 
+			plugins_url( 'js/jquery/jquery-ui-1.8.5.custom.min.js', CP_PLUGIN_FILE ),
 			array('jquery_commentpress')
 			
 		);
@@ -360,7 +369,12 @@ class CommentPressDisplay {
 	function get_frontend_styles() {
 		
 		// add jQuery UI stylesheet -> needed for resizable columns
-		wp_enqueue_style('jquery.ui.base', $this->jquery_path.'theme/ui.base.css' );
+		wp_enqueue_style(
+		
+			'jquery.ui.base', 
+			plugins_url( 'js/jquery/theme/ui.base.css', CP_PLUGIN_FILE )
+			
+		);
 		
 	}
 	
@@ -812,6 +826,8 @@ HELPTEXT;
 		// do we have any?
 		if ( !$exclude ) { $exclude = array(); }
 		
+		// exclude title page, if we have one
+		if ( $welcome_id !== false ) { $exclude[] = $welcome_id; }
 
 
 		// set list pages defaults
@@ -1234,30 +1250,6 @@ HELPTEXT;
 
 
 	/** 
-	 * @description: get the minimise button
-	 * @param: string $sidebar type of sidebar (comments, toc, activity)
-	 * @return string $tag
-	 * @todo: 
-	 *
-	 */
-	function get_minimise_button( $sidebar = 'comments' ) {
-	
-		// define minimise button
-		$tag = '<img id="cp_minimise_'.$sidebar.'" class="cp_button" src="'.get_bloginfo('template_directory').'/style/images/icons/close.png" alt="minimise button" title="Toggle Sidebar" />';
-		
-		// --<
-		return $tag;
-		
-	}
-	
-	
-	
-	
-	
-
-
-
-	/** 
 	 * @description: get the minimise all button
 	 * @param: string $sidebar type of sidebar (comments, toc, activity)
 	 * @return string $tag
@@ -1430,19 +1422,6 @@ HELPTEXT;
 		// test for mobile phone user agent
 		$this->_test_for_mobile();
 		
-
-
-		// get path to our plugin directory
-		$_plugin_path = trailingslashit( get_bloginfo('wpurl') ) . CP_PLUGIN_REL_PATH;
-
-
-		
-		// define path to plugin jQuery directory
-		$this->jquery_path = $_plugin_path. 'js/jquery/';
-		
-		// define path to jQuery plugins directory
-		$this->jquery_plugins_path =  $this->jquery_path. 'plugins/';
-		
 	}
 
 
@@ -1547,8 +1526,7 @@ HELPTEXT;
 
 '.
 
-$this->_get_internal_options().
-$this->_get_external_options().
+$this->_get_options().
 
 
 
@@ -1582,15 +1560,10 @@ $this->_get_external_options().
 	 * @todo: 
 	 *
 	 */
-	function _get_internal_options() {
+	function _get_options() {
 	
-		// Is it one of our themes?
-		if ( $this->parent_obj->is_allowed_theme() ) {
-		
-
-
-			// define Commentpress theme options
-			$options = '
+		// define Commentpress theme options
+		$options = '
 <h3>Options for the Commentpress Theme</h3>
 
 <p>When the special Commentpress theme is active, the following options modify its behaviour.</p>
@@ -1598,18 +1571,6 @@ $this->_get_external_options().
 
 
 '.$this->_get_db_mod().'
-
-
-
-<h4>Special Pages</h4>
-
-<p><strong style="color: red;">NOTE!</strong> Special pages add a lot of extra functionality to Commentpress. Create them when you first install the plugin and (optionally, if you want to remove all traces of the plugin) delete them when you uninstall Commentpress.</p>
-
-<table class="form-table">
-
-'.$this->_get_special_pages().'
-
-</table>
 
 
 
@@ -1692,6 +1653,18 @@ Below are extra options for changing how the theme looks.</p>
 
 
 
+<h4>Sidebar</h4>
+
+<p>Choose how you want your Sidebar to appear.</p>
+
+<table class="form-table">
+
+'.$this->_get_sidebar().'
+
+</table>
+
+
+
 <h4>Blog</h4>
 
 <p>Options for the blog.</p>
@@ -1708,50 +1681,7 @@ Below are extra options for changing how the theme looks.</p>
 
 ';
 	
-		}
 		
-		
-
-		// --<
-		return $options;
-		
-	}
-	
-	
-	
-	
-	
-
-
-
-	/** 
-	 * @description: returns the options for themes other than Commentpress for the admin form
-	 * @return string $options
-	 * @todo: 
-	 *
-	 */
-	function _get_external_options() {
-	
-		$options = '';	
-	
-		// Is it one of our themes?
-		if ( !$this->parent_obj->is_allowed_theme() ) {
-	
-			// define options for themes other than Commentpress
-			$options = '
-<h3>Options for a theme other than the Commentpress Theme</h3>
-
-<p><strong style="color: red;">PLEASE NOTE!</strong> we have decided to drop support for all themes other than the official Commentpress theme. This is partly because there has been no demand for Commentpress functionality with other themes &mdash; and partly because it allows us to concentrate on making the official theme as good as we can make it.</p>
-
-<p><strong style="color: red;">Please enable the Commentpress theme and then come back to this page for access to Commentpress settings.</strong></p>
-
-<p>PS: if you do want a plugin that enables paragraph-level commenting on other themes, you could try <a href="http://digress.it/">Digress.it</a>, which was based on an old version of Commentpress and see if they support the theme that you are using.</p>
-
-';
-
-		}
-		
-
 
 		// --<
 		return $options;
@@ -2001,6 +1931,27 @@ Below are extra options for changing how the theme looks.</p>
 		$upgrade = '';
 		
 		
+		
+		// do we have the option to choose the default sidebar (new in 3.4)?
+		if ( !$this->parent_obj->db->option_exists('cp_sidebar_default') ) {
+		
+			// define upgrade
+			$upgrade .= '
+	<tr valign="top">
+		<th scope="row"><label for="cp_sidebar_default">Which sidebar do you want to be active by default? (can be overridden on individual pages)</label></th>
+		<td><select id="cp_sidebar_default" name="cp_sidebar_default">
+				<option value="toc">Contents</option>
+				<option value="activity">Activity</option>
+				<option value="comments" selected="selected">Comments</option>
+			</select>
+		</td>
+	</tr>
+
+';
+
+		}
+		
+
 		
 		// do we have the option to show or hide page meta (new in 3.3.2)?
 		if ( !$this->parent_obj->db->option_exists('cp_page_meta_visibility') ) {
@@ -2373,168 +2324,34 @@ Below are extra options for changing how the theme looks.</p>
 
 
 	/** 
-	 * @description: returns the special page options
+	 * @description: returns the Sidebar options for the admin form
 	 * @return string $editor
 	 * @todo: 
 	 *
 	 */
-	function _get_special_pages() {
+	function _get_sidebar() {
 	
-		// init
-		$pages = '';
+		// get option (but if we haven't got a value, use comments)
+		$default = $this->parent_obj->db->option_get( 'cp_sidebar_default', 'comments' );
 		
-		
-		
-		// get special pages array, if it's there
-		$special_pages = $this->parent_obj->db->option_get( 'cp_special_pages' );
-	
-		// do we already have special pages?
-		if ( is_array( $special_pages ) AND count( $special_pages ) > 0 ) {
-
-			// define pages options
-			$pages = '
+		// define table of contents options
+		$toc = '
 	<tr valign="top">
-		<th scope="row"><label for="cp_delete_pages"><strong>Delete all special pages</strong></label></th>
-		<td><input id="cp_delete_pages" name="cp_delete_pages" value="1" type="checkbox" /></td>
+		<th scope="row"><label for="cp_sidebar_default">Which sidebar do you want to be active by default? (can be overridden on individual pages)</label></th>
+		<td><select id="cp_sidebar_default" name="cp_sidebar_default">
+				<option value="toc" '.(($default == 'contents') ? ' selected="selected"' : '').'>Contents</option>
+				<option value="activity" '.(($default == 'activity') ? ' selected="selected"' : '').'>Activity</option>
+				<option value="comments" '.(($default == 'comments') ? ' selected="selected"' : '').'>Comments</option>
+			</select>
+		</td>
 	</tr>
-	
+
 	';
-			
-			/*
-			// define individual pages
-			$pages .= '
-	<tr valign="top">
-		<th scope="row"><label for="cp_delete_welcome_page">Delete Title Page</label></th>
-		<td><input id="cp_delete_welcome_page" name="cp_delete_welcome_page" value="1" type="checkbox" /></td>
-	</tr>
-	
-	<tr valign="top">
-		<th scope="row"><label for="cp_delete_gen_page">Delete General Comments Page</label></th>
-		<td><input id="cp_delete_gen_page" name="cp_delete_gen_page" value="1" type="checkbox" /></td>
-	</tr>
-	
-	<tr valign="top">
-		<th scope="row"><label for="cp_delete_all_page">Delete All Comments Page</label></th>
-		<td><input id="cp_delete_all_page" name="cp_delete_all_page" value="1" type="checkbox" /></td>
-	</tr>
-	
-	<tr valign="top">
-		<th scope="row"><label for="cp_delete_by_page">Delete Comments By Author Page</label></th>
-		<td><input id="cp_delete_by_page" name="cp_delete_by_page" value="1" type="checkbox" /></td>
-	</tr>
-	
-	<tr valign="top">
-		<th scope="row"><label for="cp_delete_blog_page">Delete Blog Page</label></th>
-		<td><input id="cp_delete_blog_page" name="cp_delete_blog_page" value="1" type="checkbox" /></td>
-	</tr>
-	
-	<tr valign="top">
-		<th scope="row"><label for="cp_delete_blog_archive_page">Delete Blog Archive Page</label></th>
-		<td><input id="cp_delete_blog_archive_page" name="cp_delete_blog_archive_page" value="1" type="checkbox" /></td>
-	</tr>
-	
-	';
-			*/
 	
 	
-
-		} else {
-
-
-
-			// don't allow
-			$allowed = false;
-
-			// if we're in a multisite context 
-			if ( CP_PLUGIN_CONTEXT != 'standard' ) {
-				
-				// is our user a super admin or are they the blog admin?
-				if( is_super_admin() OR current_user_can('manage_options') ) {
-					
-					// allow
-					$allowed = true;
-					
-				}
-				
-			} else {
-			
-				// sanity check function exists
-				if ( function_exists('current_user_can') ) {
-			
-					// check user permissions
-					if ( current_user_can('manage_options') ) {
-					
-						// allow
-						$allowed = true;
-
-					}
-				
-				}
-			
-			}
-			
-			
-			
-			// can we?
-			if ( $allowed ) {
-			
-			
-			
-				// add auto-create pages
-				$pages = '
-		<tr valign="top">
-			<th scope="row"><label for="cp_create_pages"><strong>Create all special pages</strong></label></th>
-			<td><input id="cp_create_pages" name="cp_create_pages" value="1" type="checkbox" /></td>
-		</tr>
-		
-		';
-
-
-				/*
-				// define individual pages
-				$pages .= '
-	<tr valign="top">
-		<th scope="row"><label for="cp_create_welcome_page">Create Title Page</label></th>
-		<td><input id="cp_create_welcome_page" name="cp_create_welcome_page" value="1" type="checkbox" /></td>
-	</tr>
 	
-	<tr valign="top">
-		<th scope="row"><label for="cp_create_gen_page">Create General Comments Page</label></th>
-		<td><input id="cp_create_gen_page" name="cp_create_gen_page" value="1" type="checkbox" /></td>
-	</tr>
-	
-	<tr valign="top">
-		<th scope="row"><label for="cp_create_all_page">Create All Comments Page</label></th>
-		<td><input id="cp_create_all_page" name="cp_create_all_page" value="1" type="checkbox" /></td>
-	</tr>
-	
-	<tr valign="top">
-		<th scope="row"><label for="cp_create_by_page">Create Comments By Author Page</label></th>
-		<td><input id="cp_create_by_page" name="cp_create_by_page" value="1" type="checkbox" /></td>
-	</tr>
-	
-	<tr valign="top">
-		<th scope="row"><label for="cp_create_blog_page">Create Blog Page</label></th>
-		<td><input id="cp_create_blog_page" name="cp_create_blog_page" value="1" type="checkbox" /></td>
-	</tr>
-	
-	<tr valign="top">
-		<th scope="row"><label for="cp_create_blog_archive_page">Create Blog Archive Page</label></th>
-		<td><input id="cp_create_blog_archive_page" name="cp_create_blog_archive_page" value="1" type="checkbox" /></td>
-	</tr>
-	
-	';
-				*/
-			
-			
-			}
-
-		}
-		
-			
-			
 		// --<
-		return $pages;
+		return $toc;
 		
 	}
 	
@@ -2597,14 +2414,8 @@ Below are extra options for changing how the theme looks.</p>
 	 */
 	function _get_submit() {
 	
-		// init
-		$submit = '';
-		
-		// Is it one of our themes?
-		if ( $this->parent_obj->is_allowed_theme() ) {
-	
-			// define editor
-			$submit = '
+		// define editor
+		$submit = '
 <p class="submit">
 	<input type="submit" name="cp_submit" value="Save Changes" class="button-primary" />
 </p>
@@ -2612,7 +2423,6 @@ Below are extra options for changing how the theme looks.</p>
 
 
 ';
-		}
 		
 
 		
