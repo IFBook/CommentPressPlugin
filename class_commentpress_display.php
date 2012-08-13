@@ -106,7 +106,9 @@ class CommentPressDisplay {
 	/** 
 	 * @description: if needed, sets up this object
 	 * @param integer $blog_id the ID of the blog - default null
-	 * @todo: for BP, activate BP child theme
+	 * @todo: work out how to assess whether the theme needs activating and how to upgrade. 
+	 * more urgently: ONLY activate theme if not called from CP for Multisite until 
+	 * that plugin is updated NOT to activate the theme.
 	 *
 	 */
 	function activate( $blog_id = null ) {
@@ -444,47 +446,42 @@ class CommentPressDisplay {
 		
 		
 		
-		// Is it one of our themes?
-		if ( $this->parent_obj->is_allowed_theme() ) {
+		// test for wp_editor()
+		if ( function_exists( 'wp_editor' ) ) {
 		
-			// test for wp_editor()
-			if ( function_exists( 'wp_editor' ) ) {
+			// don't include anything - this will be done in the comment form template
+			return;
 			
-				// don't include anything - this will be done in the comment form template
-				return;
+		} else {
+		
+			// test for WordPress version
+			global $wp_version;
+			
+			// for WP 3.2+
+			if ( version_compare( $wp_version, '3.2', '>=' ) ) {
 				
+				// don't need settings
+				$this->_get_tinymce();
+			
 			} else {
 			
-				// test for WordPress version
-				global $wp_version;
+				// get site HTTP root
+				$site_http_root = trailingslashit( get_bloginfo('wpurl') );
+		
+				// all TinyMCE scripts
+				$scripts .= '<!-- TinyMCE -->
+<script type="text/javascript" src="'.$site_http_root.'wp-includes/js/tinymce/tiny_mce.js"></script>
+<script type="text/javascript" src="'.$site_http_root.'wp-includes/js/tinymce/langs/wp-langs-en.js?ver=20081129"></script>
+'."\n";
+
+				// add our init
+				$scripts .= $this->_get_tinymce_init();
 				
-				// for WP 3.2+
-				if ( version_compare( $wp_version, '3.2', '>=' ) ) {
-					
-					// don't need settings
-					$this->_get_tinymce();
-				
-				} else {
-				
-					// get site HTTP root
-					$site_http_root = trailingslashit( get_bloginfo('wpurl') );
-			
-					// all TinyMCE scripts
-					$scripts .= '<!-- TinyMCE -->
-	<script type="text/javascript" src="'.$site_http_root.'wp-includes/js/tinymce/tiny_mce.js"></script>
-	<script type="text/javascript" src="'.$site_http_root.'wp-includes/js/tinymce/langs/wp-langs-en.js?ver=20081129"></script>
-	'."\n";
-	
-					// add our init
-					$scripts .= $this->_get_tinymce_init();
-					
-					// out to browser
-					echo $scripts;
-					
-				}
+				// out to browser
+				echo $scripts;
 				
 			}
-	
+			
 		}
 
 	}
@@ -1698,7 +1695,7 @@ Below are extra options for changing how the theme looks.</p>
 	/** 
 	 * @description: returns either the install or uninstall button
 	 * @return string $reset
-	 * @todo: 
+	 * @todo: assess whether we need this
 	 *
 	 */
 	function _get_db_mod() {
@@ -1707,12 +1704,12 @@ Below are extra options for changing how the theme looks.</p>
 		if ( $this->parent_obj->db->db_is_modified() ) {
 		
 			// yes -> show uninstall
-			return $this->_get_uninstall();
+			//return $this->_get_uninstall();
 		
 		} else {
 		
 			// no -> show install
-			return $this->_get_install();
+			//return $this->_get_install();
 		
 		}
 	
