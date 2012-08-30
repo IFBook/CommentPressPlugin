@@ -229,12 +229,11 @@ class CommentPressDisplay {
 		
 		
 		// add our javascript plugin and dependencies
-		// NOTE: the UI has to be added separately, as the built in one is not the latest
 		wp_enqueue_script(
 		
 			'jquery_commentpress', 
 			plugins_url( 'js/jquery/plugins/jquery.commentpress'.$debug_state.'.js', CP_PLUGIN_FILE ),
-			array('jquery','jquery-form')
+			array('jquery','jquery-form','jquery-ui-core','jquery-ui-resizable')
 		
 		);
 		
@@ -256,14 +255,11 @@ class CommentPressDisplay {
 			
 		);
 		
-		// add jQuery UI
-		wp_enqueue_script(
-		
-			'jquery_ui_all', 
-			plugins_url( 'js/jquery/jquery-ui-1.8.5.custom.min.js', CP_PLUGIN_FILE ),
-			array('jquery_commentpress')
-			
-		);
+		/*
+		Prior to WP3.2 (IIRC), jQuery UI has to be added separately, as the built in one was not 
+		sufficiently up-to-date. This is no longer the case, so the independent jQuery UI package 
+		has been removed from Commentpress in favour of the built-in one.
+		*/
 
 	}
 	
