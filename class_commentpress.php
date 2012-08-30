@@ -1697,20 +1697,106 @@ class CommentPress {
 	 */
 	function exclude_special_pages_from_admin( $query ) {
 	
-		//print_r( $excluded_array ); die();
+		//print_r( $query ); die();
+	
+		global $pagenow, $post_type;
+		
+		// check admin location
+		if ( is_admin() AND $pagenow=='edit.php' AND $post_type =='page' ) {
+		
+			// get special pages array, if it's there
+			$special_pages = $this->db->option_get( 'cp_special_pages' );
+			
+			// do we have an array?
+			if ( is_array( $special_pages ) AND count( $special_pages ) > 0 ) {
+			
+				// modify query
+				$query->query_vars['post__not_in'] = $special_pages;
+			
+			}
+
+		}
+		
+	}
+	
+	
+	
+	
+	
+	
+	/** 
+	 * @description: page counts still need amending
+	 * @todo: 
+	 *
+	 */
+	function update_page_counts_in_admin( $vars ) {
+	
+		//print_r( $vars ); die();
 	
 		global $pagenow, $post_type;
 		
 		// check admin location
 		if (is_admin() && $pagenow=='edit.php' && $post_type =='page') {
-
+		
 			// get special pages array, if it's there
 			$special_pages = $this->db->option_get( 'cp_special_pages' );
 			
-			// modify query
-			$query->query_vars['post__not_in'] = $special_pages;
-
+			// do we have an array?
+			if ( is_array( $special_pages ) ) {
+			
+				/*
+				Data comes in like this:
+				[all] => <a href='edit.php?post_type=page' class="current">All <span class="count">(8)</span></a>
+				[publish] => <a href='edit.php?post_status=publish&amp;post_type=page'>Published <span class="count">(8)</span></a>
+				*/
+				
+				// capture existing value enclosed in brackets
+				preg_match( '/\((\d+)\)/', $vars['all'], $matches );
+				//print_r( $matches ); die();
+				
+				// did we get a result?
+				if ( !is_null( $matches[1] ) ) {
+					
+					// subtract special page count
+					$new_count = $matches[1] - count( $special_pages );
+				
+					// rebuild 'all' and 'publish' items
+					$vars['all'] = preg_replace( 
+					
+						'/\(\d+\)/', 
+						'('.$new_count.')', 
+						$vars['all'] 
+						
+					);
+					
+				}
+			
+				// capture existing value enclosed in brackets
+				preg_match( '/\((\d+)\)/', $vars['publish'], $matches );
+				//print_r( $matches ); die();
+				
+				// did we get a result?
+				if ( !is_null( $matches[1] ) ) {
+				
+					// subtract special page count
+					$new_count = $matches[1] - count( $special_pages );
+				
+					// rebuild 'all' and 'publish' items
+					$vars['publish'] = preg_replace( 
+					
+						'/\(\d+\)/', 
+						'('.$new_count.')', 
+						$vars['publish'] 
+						
+					);
+					
+				}
+			
+			}
+		
 		}
+		
+		return $vars;
 		
 	}
 	
@@ -2349,7 +2435,10 @@ class CommentPress {
 		
 		// is this the back end?
 		if ( is_admin() ) {
-		
+			
+			// modify all
+			add_filter( 'views_edit-page', array( &$this, 'update_page_counts_in_admin' ), 10, 1 );
+			
 			// modify admin menu
 			add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 			
