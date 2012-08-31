@@ -1166,7 +1166,7 @@ class CommentPressNavigator {
 				$key = '_cp_number_format';
 				
 				// if the custom field already has a value...
-				if ( get_post_meta( $page_obj->ID, $key, true ) != '' ) {
+				if ( get_post_meta( $page_obj->ID, $key, true ) !== '' ) {
 				
 					// get it
 					$format = get_post_meta( $page_obj->ID, $key, true );
@@ -1177,7 +1177,7 @@ class CommentPressNavigator {
 					$top_page_id = $this->_get_top_parent_id( $page_obj->ID );
 				
 					// if the custom field has a value...
-					if ( get_post_meta( $top_page_id, $key, true ) != '' ) {
+					if ( get_post_meta( $top_page_id, $key, true ) !== '' ) {
 					
 						// get it
 						$format = get_post_meta( $top_page_id, $key, true );
