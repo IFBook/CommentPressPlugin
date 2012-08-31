@@ -155,29 +155,13 @@ class CommentPress {
 	 *
 	 */
 	function activate( $blog_id = null ) {
-		
-		// if we're in multisite
-		if ( CP_PLUGIN_CONTEXT != 'standard' ) {
-			
-			// activate our newly created blog
-			switch_to_blog( $blog_id );
-
-		}
 	
 		// initialise display - sets the theme
-		$this->display->initialise( $blog_id );
+		$this->display->activate( $blog_id );
 		
 		// initialise database
-		$this->db->initialise( $blog_id );
+		$this->db->activate( $blog_id );
 		
-		// if we're in multisite
-		if ( CP_PLUGIN_CONTEXT != 'standard' ) {
-			
-			// done - restore current blog
-			restore_current_blog();
-
-		}
-	
 	}
 	
 	
@@ -194,10 +178,33 @@ class CommentPress {
 	function deactivate() {
 	
 		// call database destroy method
-		$this->db->destroy();
+		$this->db->deactivate();
 		
 		// call display destroy method
-		$this->display->destroy();
+		$this->display->deactivate();
+		
+	}
+	
+	
+	
+	
+	
+	
+		
+	/** 
+	 * @description: runs when plugin is uninstalled
+	 * @todo: do we want to remove all traces of the plugin?
+	 *
+	 */
+	function uninstall() {
+		
+		/*
+		// call database destroy method
+		$this->db->uninstall();
+		
+		// call display destroy method
+		$this->display->uninstall();
+		*/
 		
 	}
 	
@@ -910,38 +917,6 @@ class CommentPress {
 	
 		// get list option flag
 		$result = $this->db->option_get( 'cp_show_posts_or_pages_in_toc' );
-		
-		
-		
-		// --<
-		return $result;
-	}
-	
-	
-	
-	
-	
-	
-
-	/** 
-	 * @description: retrieves minimise button
-	 * @param: string $sidebar type of sidebar (comments, toc, activity)
-	 * @return string $result HTML for minimise button
-	 * @todo: 
-	 *
-	 */
-	function get_minimise_button( $sidebar = 'comments' ) {
-	
-		// init
-		$result = '';
-
-		// if minimised is checked
-		if ( $this->db->option_get( 'cp_minimise_sidebar' ) == 1 ) {
-		
-			// get minimise image
-			$result = $this->display->get_minimise_button( $sidebar );
-		
-		}
 		
 		
 		
@@ -1685,6 +1660,152 @@ class CommentPress {
 	
 	
 	/** 
+	 * @description: exclude special pages from page listings
+	 * @todo: 
+	 *
+	 */
+	function exclude_special_pages( $excluded_array ) {
+	
+		//print_r( $excluded_array ); die();
+	
+		// get special pages array, if it's there
+		$special_pages = $this->db->option_get( 'cp_special_pages' );
+		
+		// do we have an array?
+		if ( is_array( $special_pages ) ) {
+		
+			// merge and make unique
+			$excluded_array = array_unique( array_merge( $excluded_array, $special_pages ) );
+		
+		}
+		
+		// --<
+		return $excluded_array;
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	/** 
+	 * @description: exclude special pages from admin page listings
+	 * @todo: 
+	 *
+	 */
+	function exclude_special_pages_from_admin( $query ) {
+	
+		//print_r( $query ); die();
+	
+		global $pagenow, $post_type;
+		
+		// check admin location
+		if ( is_admin() AND $pagenow=='edit.php' AND $post_type =='page' ) {
+		
+			// get special pages array, if it's there
+			$special_pages = $this->db->option_get( 'cp_special_pages' );
+			
+			// do we have an array?
+			if ( is_array( $special_pages ) AND count( $special_pages ) > 0 ) {
+			
+				// modify query
+				$query->query_vars['post__not_in'] = $special_pages;
+			
+			}
+
+		}
+		
+	}
+	
+	
+	
+	
+	
+	
+	/** 
+	 * @description: page counts still need amending
+	 * @todo: 
+	 *
+	 */
+	function update_page_counts_in_admin( $vars ) {
+	
+		//print_r( $vars ); die();
+	
+		global $pagenow, $post_type;
+		
+		// check admin location
+		if (is_admin() && $pagenow=='edit.php' && $post_type =='page') {
+		
+			// get special pages array, if it's there
+			$special_pages = $this->db->option_get( 'cp_special_pages' );
+			
+			// do we have an array?
+			if ( is_array( $special_pages ) ) {
+			
+				/*
+				Data comes in like this:
+				[all] => <a href='edit.php?post_type=page' class="current">All <span class="count">(8)</span></a>
+				[publish] => <a href='edit.php?post_status=publish&amp;post_type=page'>Published <span class="count">(8)</span></a>
+				*/
+				
+				// capture existing value enclosed in brackets
+				preg_match( '/\((\d+)\)/', $vars['all'], $matches );
+				//print_r( $matches ); die();
+				
+				// did we get a result?
+				if ( !is_null( $matches[1] ) ) {
+					
+					// subtract special page count
+					$new_count = $matches[1] - count( $special_pages );
+				
+					// rebuild 'all' and 'publish' items
+					$vars['all'] = preg_replace( 
+					
+						'/\(\d+\)/', 
+						'('.$new_count.')', 
+						$vars['all'] 
+						
+					);
+					
+				}
+			
+				// capture existing value enclosed in brackets
+				preg_match( '/\((\d+)\)/', $vars['publish'], $matches );
+				//print_r( $matches ); die();
+				
+				// did we get a result?
+				if ( !is_null( $matches[1] ) ) {
+				
+					// subtract special page count
+					$new_count = $matches[1] - count( $special_pages );
+				
+					// rebuild 'all' and 'publish' items
+					$vars['publish'] = preg_replace( 
+					
+						'/\(\d+\)/', 
+						'('.$new_count.')', 
+						$vars['publish'] 
+						
+					);
+					
+				}
+			
+			}
+		
+		}
+		
+		return $vars;
+		
+	}
+	
+	
+	
+	
+	
+	
+	/** 
 	 * @description: get comments sorted by text signature and paragraph
 	 * @param integer $post_ID the ID of the post
 	 * @return array $_comments
@@ -2038,15 +2159,27 @@ class CommentPress {
 	 */
 	function get_default_sidebar() {
 	
-		// test for buddypress special page
-		if ( $this->is_buddypress() ) {
-			
-			// is it a component homepage?
-			if ( $this->is_buddypress_special_page() ) {
-			
-				return 'toc';
-			
+		// set sensible default
+		$return = 'toc';
+	
+
+
+		// is this a commentable page?
+		if ( !$this->is_commentable() ) {
+		
+			// either activity or toc
+			if ( $this->db->option_exists( 'cp_sidebar_default' ) ) {
+				
+				// override
+				$default = $this->db->option_get( 'cp_sidebar_default' );
+				
+				// use it unless it's 'comments'
+				if ( $default != 'comments' ) { $return = $default; }
+				
 			}
+			
+			// --<
+			return $return;
 			
 		}
 		
@@ -2058,6 +2191,8 @@ class CommentPress {
 		// testing what we do with CPTs...
 		//if ( is_singular() OR is_singular( $_types ) ) {
 		
+		
+		
 		// is it a commentable page?
 		if ( is_singular() ) {
 		
@@ -2066,15 +2201,31 @@ class CommentPress {
 			// avoid the issue by checking if it is
 			if ( is_object( $this->db ) ) {
 		
-				// is it a special page which have comments in page?
+				// is it a special page which have comments in page (or are not commentable)?
 				if ( !$this->db->is_special_page() ) {
 				
-					// compat with Theme My Login
-					if( !$this->is_theme_my_login_page() ) {
+					// access page
+					global $post;
+				
+					// is it our title page?
+					if ( $post->ID == $this->db->option_get( 'cp_welcome_page' ) ) {
 					
-						// set default sidebar
-						return 'comments';
+						// special case?
+						return 'toc';
+					
+					} else {
+					
+						// either comments, activity or toc
+						if ( $this->db->option_exists( 'cp_sidebar_default' ) ) {
+							
+							// override
+							$return = $this->db->option_get( 'cp_sidebar_default' );
+							
+						}
 						
+						// --<
+						return $return;
+					
 					}
 					
 				}
@@ -2085,10 +2236,92 @@ class CommentPress {
 		
 
 		
+		// not singular... must be either activity or toc
+		if ( $this->db->option_exists( 'cp_sidebar_default' ) ) {
+			
+			// override
+			$default = $this->db->option_get( 'cp_sidebar_default' );
+			
+			// use it unless it's 'comments'
+			if ( $default != 'comments' ) { $return = $default; }
+			
+		}
+		
+		
+		
 		// --<
-		return 'toc';
+		return $return;
 		
 	}
+	
+	
+	
+	
+	
+	
+
+	/** 
+	 * @description: get the order of the sidebars
+	 * @return array sidebars in order of display
+	 * @todo:
+	 */
+	function get_sidebar_order() {
+		
+		// set default but allow overrides
+		$order = apply_filters( 
+			
+			// hook name
+			'cp_sidebar_tab_order', 
+			
+			// default order
+			array( 'comments', 'activity', 'contents' ) 
+			
+		);
+		
+		// --<
+		return $order;
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	/** 
+	 * @description: check if a page/post can be commented on
+	 * @return boolean true if commentable, false otherwise
+	 * @todo:
+	 */
+	function is_commentable() {
+	
+		// declare access to globals
+		global $post;
+	
+		
+		
+		// not if we're not on a page/post and especially not if there's no post object
+		if ( !is_singular() OR !is_object( $post ) ) { return false; }
+		
+		
+		
+		// CP Special Pages special pages are not
+		if ( $this->db->is_special_page() ) { return false; }
+
+		// BuddyPress special pages are not
+		if ( $this->is_buddypress_special_page() ) { return false; }
+
+		// Theme My Login page is not
+		if ( $this->is_theme_my_login_page() ) { return false; }
+
+
+	
+		// --<
+		return true;
+		
+	}
+	
 	
 	
 	
@@ -2196,9 +2429,16 @@ class CommentPress {
 		// modify comment posting
 		add_action( 'comment_post', array( &$this, 'save_comment' ), 10, 2 );
 		
+		// exclude special pages from listings
+		add_filter( 'wp_list_pages_excludes', array( &$this, 'exclude_special_pages' ), 10, 1 );
+		add_filter( 'parse_query', array( &$this, 'exclude_special_pages_from_admin' ), 10, 1 );
+		
 		// is this the back end?
 		if ( is_admin() ) {
-		
+			
+			// modify all
+			add_filter( 'views_edit-page', array( &$this, 'update_page_counts_in_admin' ), 10, 1 );
+			
 			// modify admin menu
 			add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 			
@@ -2252,57 +2492,20 @@ class CommentPress {
 			
 		}
 			
-		// if we're in a standalone, multisite-optional scenario
-		if ( CP_PLUGIN_CONTEXT == 'standard' OR CP_PLUGIN_CONTEXT == 'mu_optional' ) {
-		
-			// activation
-			register_activation_hook( CP_PLUGIN_FILE, array( &$this, 'activate' ) );
-			
-			// deactivation
-			register_deactivation_hook( CP_PLUGIN_FILE, array( &$this, 'deactivate' ) );
-			
-		} else {
-		
-			// multisite-forced or multisite-sitewide activation
-			
-			// NOTE: if a user registers a blog during the signup process, and the Commentpress
-			// plugin is 'network activated' or force-activated, the plugin is activated, 
-			// but register_activation_hook is not fired.
-		
-			// if we're in multisite-sitewide scenario
-			if ( CP_PLUGIN_CONTEXT == 'mu_sitewide' ) {
-			
-				// sitewide -> we hook into the blog activation process? nope...
-				//add_action( 'wpmu_activate_blog', array( &$this, 'activate' ) );
-				
-			} else {
-			
-				// forced -> we hook into the blog creation process. works!
-				add_action( 'wpmu_new_blog', array( &$this, 'activate' ) );
-				
-			}
-			
-		}
-		
 		// if we're in a multisite scenario
-		if ( CP_PLUGIN_CONTEXT != 'standard' ) {
+		if ( is_multisite() ) {
 		
-			// add filter for signup page
+			// add filter for signup page to include sidebar
 			add_filter( 'after_signup_form', array( &$this, 'after_signup_form' ) );
 			
-			// is this multisite?
-			if ( is_multisite() ) {
+			// if subdirectory install
+			if ( !is_subdomain_install() ) {
 			
-				// if subdirectory install
-				if ( !is_subdomain_install() ) {
-				
-					// add filter for reserved commentpress special page names
-					add_filter( 'subdirectory_reserved_names', array( &$this, 'add_reserved_names' ) );
-					
-				}
+				// add filter for reserved commentpress special page names
+				add_filter( 'subdirectory_reserved_names', array( &$this, 'add_reserved_names' ) );
 				
 			}
-		
+			
 		}
 		
 		// if BP installed...
@@ -2545,6 +2748,9 @@ class CommentPress {
 	 */
 	function _get_text_matches( $content, $tag = 'p|ul|ol' ) {
 	
+		// filter out embedded tweets
+		$content = $this->_filter_twitter_embeds( $content );
+				
 		// get our paragraphs (needed to split regex into two strings as some IDEs 
 		// don't like PHP closing tags, even they are part of a regex and not actually
 		// closing tags at all) 
@@ -2785,6 +2991,9 @@ class CommentPress {
 	 */
 	function _get_line_matches( $content ) {
 		
+		// filter out embedded tweets
+		$content = $this->_filter_twitter_embeds( $content );
+				
 		// wrap all lines with spans
 		
 		// get all instances
@@ -3602,6 +3811,52 @@ class CommentPress {
 	
 	
 	/** 
+	 * @description: removes embedded tweets (new in WP 3.4)
+	 * @param string $content the post content
+	 * @return string $content the filtered post content
+	 * @todo: make these commentable
+	 *
+	 */
+	function _filter_twitter_embeds( $content ) {
+	
+		// test for a WP 3.4 function
+		if ( function_exists( 'wp_get_themes' ) ) {
+	
+			// look for Embedded Tweet <blockquote>
+			if ( preg_match('#<(blockquote class="twitter-tweet)[^>]*?'.'>(.*?)</(blockquote)>#si', $content, $matches) ) {
+			
+				// derive list
+				$content = explode( $matches[0], $content, 2 );
+				
+				// rejoin to exclude from content to be parsed
+				$content = implode( '', $content );
+				
+				// also remove twitter script
+				$content = str_replace(
+				
+					'<p><script src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>', 
+					'', 
+					$content 
+					
+				);
+				
+			}
+			
+		}
+		
+		
+		
+		// --<
+		return $content;
+				
+	}
+	
+	
+	
+		
+		
+		
+	/** 
 	 * @description: filter comments to find comments for the current page of a multipage post
 	 * @param array $comments array of comment objects
 	 * @return array $filtered array of comments for the current page
@@ -3906,7 +4161,7 @@ class CommentPress {
 	function _file_is_present( $filename ) {
 	
 		// define path to our requested file
-		$filepath = CP_PLUGIN_ABS_PATH . $filename;
+		$filepath = plugin_dir_path( CP_PLUGIN_FILE ) . $filename;
 	
 		// is our class definition present?
 		if ( !is_file( $filepath ) ) {
