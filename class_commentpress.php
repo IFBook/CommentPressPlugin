@@ -1765,7 +1765,7 @@ class CommentPress {
 				//print_r( $matches ); die();
 				
 				// did we get a result?
-				if ( !is_null( $matches[1] ) ) {
+				if ( isset( $matches[1] ) ) {
 					
 					// subtract special page count
 					$new_count = $matches[1] - count( $special_pages );
@@ -1786,7 +1786,7 @@ class CommentPress {
 				//print_r( $matches ); die();
 				
 				// did we get a result?
-				if ( !is_null( $matches[1] ) ) {
+				if ( isset( $matches[1] ) ) {
 				
 					// subtract special page count
 					$new_count = $matches[1] - count( $special_pages );
