@@ -370,7 +370,7 @@ class CommentPressDisplay {
 		wp_enqueue_style(
 		
 			'jquery.ui.base', 
-			plugins_url( 'js/jquery/theme/ui.base.css', CP_PLUGIN_FILE )
+			plugins_url( 'js/jquery/theme/jquery.ui.css', CP_PLUGIN_FILE )
 			
 		);
 		
