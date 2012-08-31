@@ -1214,7 +1214,7 @@ class CommentPress {
 		$viz = $this->db->option_get( 'cp_title_visibility' );
 		
 		// if the custom field already has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
 			// get it
 			$viz = get_post_meta( $post->ID, $key, true );
@@ -1247,7 +1247,7 @@ class CommentPress {
 		$viz = $this->db->option_get( 'cp_page_meta_visibility' );
 		
 		// if the custom field already has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
 			// get it
 			$viz = get_post_meta( $post->ID, $key, true );
@@ -1290,7 +1290,7 @@ class CommentPress {
 			$format = 'arabic';
 			
 			// if the custom field already has a value...
-			if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+			if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 			
 				// get it
 				$format = get_post_meta( $post->ID, $key, true );
@@ -1330,7 +1330,7 @@ class CommentPress {
 			$value = 'text';
 
 			// if the custom field already has a value...
-			if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+			if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 			
 				// get it
 				$value = get_post_meta( $post->ID, $key, true );
@@ -1385,7 +1385,7 @@ class CommentPress {
 		$key = '_cp_newer_version';
 		
 		// if the custom field already has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
 			// get it
 			$new_post_id = get_post_meta( $post->ID, $key, true );
@@ -4288,7 +4288,7 @@ class CommentPress {
 				$value = $this->db->option_get('cp_blog_type');
 				
 				// but, if the custom field has a value...
-				if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+				if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 				
 					// get it
 					$value = get_post_meta( $post->ID, $key, true );

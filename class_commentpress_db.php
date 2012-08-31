@@ -2054,7 +2054,7 @@ class CommentPressDatabase {
 			$previous_version = $previous_versions[0];
 		
 			// if the custom field has a value...
-			if ( get_post_meta( $previous_version->ID, $key, true ) != '' ) {
+			if ( get_post_meta( $previous_version->ID, $key, true ) !== '' ) {
 			
 				// delete it
 				delete_post_meta( $previous_version->ID, $key );
