@@ -87,6 +87,9 @@ class CommentPressDatabase {
 		
 	// default blog workflow (like translation, for example), off by default
 	var $blog_workflow = 0;
+	
+	// default sidebar
+	var $sidebar_default = 'comments';
 		
 	// default minimum page width (px)
 	var $min_page_width = '447';
@@ -154,24 +157,24 @@ class CommentPressDatabase {
 	 * @todo: 
 	 *
 	 */
-	function initialise( $blog_id = null ) {
+	function activate( $blog_id = null ) {
 		
 		// update db schema
 		$this->schema_update();
 		
-		// test that we aren't reactivating
+		// test if we have our version
 		if ( !$this->option_wp_get( 'cp_version' ) ) {
+		
+			// store Commentpress version
+			$this->option_wp_set( 'cp_version', CP_VERSION );
+		
+		}
+		
+		// test that we aren't reactivating
+		if ( !$this->option_wp_get( 'cp_options' ) ) {
 		
 			// add options with default values
 			$this->options_create();
-			
-			// if we're force-activating in multisite (need to review network activation)
-			if ( CP_PLUGIN_CONTEXT == 'mu_forced' ) { //OR CP_PLUGIN_CONTEXT == 'mu_sitewide' ) {
-			
-				// create special pages
-				$this->create_special_pages();
-				
-			}
 			
 			// enable comment threading (should this be an option?)
 			//$this->_store_wordpress_option( 'thread_comments', '1' );
@@ -180,6 +183,9 @@ class CommentPressDatabase {
 			$this->_cancel_comment_paging();
 	
 		}
+		
+		// always create special pages
+		$this->create_special_pages();
 		
 	}
 
@@ -230,6 +236,48 @@ class CommentPressDatabase {
 			
 			// get variables
 			extract( $_POST );
+			
+
+
+			// New in CP 3.4 - changed the way the welcome page works
+			if ( $this->option_exists( 'cp_special_pages' ) ) {
+			
+				// do we have the cp_welcome_page option?
+				if ( $this->option_exists( 'cp_welcome_page' ) ) {
+				
+					// get it
+					$page_id = $this->option_get( 'cp_welcome_page' );
+				
+					// retrieve data on special pages
+					$special_pages = $this->option_get( 'cp_special_pages' );
+					
+					// is it in our special pages array?
+					if ( in_array( $page_id, $special_pages ) ) {
+					
+						// remove page id from array
+						$special_pages = array_diff( $special_pages, array( $page_id ) );
+			
+						// reset option
+						$this->option_set( 'cp_special_pages', $special_pages );
+					
+					}
+					
+				}
+	
+			}
+			
+
+
+			// New in CP 3.4 - are we missing the cp_sidebar_default option?
+			if ( !$this->option_exists( 'cp_sidebar_default' ) ) {
+			
+				// get choice
+				$_choice = $wpdb->escape( $cp_sidebar_default );
+			
+				// add chosen cp_page_meta_visibility option
+				$this->option_set( 'cp_sidebar_default', $_choice );
+				
+			}
 			
 
 
@@ -425,23 +473,20 @@ class CommentPressDatabase {
 
 
 	/** 
-	 * @description: if needed, destroys all items associated with this object
+	 * @description: reset Wordpress to prior state, but retain options
 	 * @todo: 
 	 *
 	 */
-	function destroy() {
-	
+	function deactivate() {
+		
 		// reset comment threading
 		//$this->_reset_wordpress_option( 'thread_comments' );
-
+		
 		// reset comment paging option
 		$this->_reset_comment_paging();
-
-		// remove special pages
-		//$this->delete_special_pages();
 		
-		// delete options
-		$this->options_delete();
+		// always remove special pages
+		$this->delete_special_pages();
 		
 	}
 
@@ -452,12 +497,18 @@ class CommentPressDatabase {
 
 
 	/** 
-	 * @description: uninstalls database modifications
+	 * @description: uninstalls pages, options and database modifications
 	 * @todo: 
 	 *
 	 */
 	function uninstall() {
-	
+		
+		// remove special pages
+		$this->delete_special_pages();
+		
+		// delete options
+		$this->options_delete();
+		
 		// restore database schema
 		// NOTE: we will lose all our submitted comment text signatures
 		$this->schema_restore();
@@ -669,15 +720,13 @@ class CommentPressDatabase {
 			'cp_minimise_sidebar' => $this->minimise_sidebar,
 			'cp_excerpt_length' => $this->excerpt_length,
 			'cp_blog_type' => $this->blog_type,
-			'cp_blog_workflow' => $this->blog_workflow
+			'cp_blog_workflow' => $this->blog_workflow,
+			'cp_sidebar_default' => $this->sidebar_default
 		
 		);
 
 		// Paragraph-level comments enabled by default
 		add_option( 'cp_options', $this->cp_options );
-		
-		// store Commentpress version
-		add_option( 'cp_version', CP_VERSION );
 		
 	}
 	
@@ -688,7 +737,7 @@ class CommentPressDatabase {
 
 
 	/** 
-	 * @description: delete all basic Commentpress options
+	 * @description: delete all Commentpress options
 	 * @todo: 
 	 *
 	 */
@@ -750,6 +799,7 @@ class CommentPressDatabase {
 			$cp_show_extended_toc = 0;
 			$cp_blog_type = 0;
 			$cp_blog_workflow = 0;
+			$cp_sidebar_default = 'comments';
 			
 
 			// get variables
@@ -799,14 +849,9 @@ class CommentPressDatabase {
 			// did we ask to reset?
 			if ( $cp_reset == '1' ) {
 			
-				// Is it one of our themes?
-				if ( $this->parent_obj->is_allowed_theme() ) {
-
-					// reset theme options
-					$this->options_reset_theme();
-			
-				}
-				
+				// reset theme options
+				$this->options_reset_theme();
+		
 				// --<
 				return true;
 			
@@ -971,6 +1016,10 @@ class CommentPressDatabase {
 			
 			}
 
+			// save default sidebar
+			$cp_sidebar_default = $wpdb->escape( $cp_sidebar_default );
+			$this->option_set( 'cp_sidebar_default', $cp_sidebar_default );
+			
 
 
 			// save
@@ -1972,6 +2021,19 @@ class CommentPressDatabase {
 		
 		
 		
+		// if it's our welcome page...
+		if ( $post_id == $this->option_get( 'cp_welcome_page' ) ) {
+		
+			// delete option
+			$this->option_delete( 'cp_welcome_page' );
+			
+			// save
+			$this->options_save();
+			
+		}
+		
+		
+		
 		// for posts with versions, we need to delete the version data for the previous version
 		
 		// define key
@@ -2157,85 +2219,80 @@ class CommentPressDatabase {
 		
 
 
-		// Is it one of our themes?
-		if ( $this->parent_obj->is_allowed_theme() ) {
+		// add rich text editor behaviour
+		$vars['cp_promote_reading'] = 1;
 		
-			// add rich text editor behaviour
-			$vars['cp_promote_reading'] = 1;
+		// check option
+		if ( 
+		
+			$this->option_exists( 'cp_promote_reading' ) AND
+			$this->option_get( 'cp_promote_reading' ) != '1'
 			
-			// check option
-			if ( 
+		) {
+		
+			// promote commenting
+			$vars['cp_promote_reading'] = 0;
 			
-				$this->option_exists( 'cp_promote_reading' ) AND
-				$this->option_get( 'cp_promote_reading' ) != '1'
-				
-			) {
+		}
+		
+		// add special page var
+		$vars['cp_special_page'] = ( $this->is_special_page() ) ? '1' : '0';
+
+		// are we in a BuddyPress scenario?
+		if ( $this->parent_obj->is_buddypress() ) {
 			
-				// promote commenting
-				$vars['cp_promote_reading'] = 0;
-				
+			// is it a component homepage?
+			if ( $this->parent_obj->is_buddypress_special_page() ) {
+			
+				// treat them the way we do ours
+				$vars['cp_special_page'] = '1';
+			
 			}
 			
-			// add special page var
-			$vars['cp_special_page'] = ( $this->is_special_page() ) ? '1' : '0';
+		}
+		
+		// get path
+		$url_info = parse_url( get_option('siteurl') );
+		
+		// add path for cookies
+		$vars['cp_cookie_path'] = '/';
+		if ( isset( $url_info['path'] ) ) {
+			$vars['cp_cookie_path'] = trailingslashit( $url_info['path'] );
+		}
+		
+		// add page
+		global $page;
+		$vars['cp_multipage_page'] = ( !empty( $page ) ) ? $page : 0;
+		
+		// add path to template directory
+		$vars['cp_template_dir'] = get_template_directory_uri();
+		
+		// add path to plugin directory
+		$vars['cp_plugin_dir'] = WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__));
+		
+		// are chapters pages?
+		$vars['cp_toc_chapter_is_page'] = $this->option_get( 'cp_toc_chapter_is_page' );
+		
+		// are subpages shown?
+		$vars['cp_show_subpages'] = $this->option_get( 'cp_show_subpages' );
 	
-			// are we in a BuddyPress scenario?
-			if ( $this->parent_obj->is_buddypress() ) {
-				
-				// is it a component homepage?
-				if ( $this->parent_obj->is_buddypress_special_page() ) {
-				
-					// treat them the way we do ours
-					$vars['cp_special_page'] = '1';
-				
-				}
-				
-			}
-			
-			// get path
-			$url_info = parse_url( get_option('siteurl') );
-			
-			// add path for cookies
-			$vars['cp_cookie_path'] = '/';
-			if ( isset( $url_info['path'] ) ) {
-				$vars['cp_cookie_path'] = trailingslashit( $url_info['path'] );
-			}
-			
-			// add page
-			global $page;
-			$vars['cp_multipage_page'] = ( !empty( $page ) ) ? $page : 0;
-			
-			// add path to template directory
-			$vars['cp_template_dir'] = get_template_directory_uri();
-			
-			// add path to plugin directory
-			$vars['cp_plugin_dir'] = WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__));
-			
-			// are chapters pages?
-			$vars['cp_toc_chapter_is_page'] = $this->option_get( 'cp_toc_chapter_is_page' );
-			
-			// are subpages shown?
-			$vars['cp_show_subpages'] = $this->option_get( 'cp_show_subpages' );
+		// set default sidebar
+		$vars['cp_default_sidebar'] = $this->parent_obj->get_default_sidebar();
 		
-			// set default sidebar
-			$vars['cp_default_sidebar'] = $this->parent_obj->get_default_sidebar();
-			
-			// set scroll speed
-			$vars['cp_js_scroll_speed'] = $this->option_get( 'cp_js_scroll_speed' );
-			
-			// set min page width
-			$vars['cp_min_page_width'] = $this->option_get( 'cp_min_page_width' );
-			
-			// set signup flag
-			$vars['cp_is_signup_page'] = '0';
-			
-			// test for signup
-			if ( $this->parent_obj->is_signup_page() ) {
-			
-				// set flag
-				$vars['cp_is_signup_page'] = '1';
-				
-			}
+		// set scroll speed
+		$vars['cp_js_scroll_speed'] = $this->option_get( 'cp_js_scroll_speed' );
+		
+		// set min page width
+		$vars['cp_min_page_width'] = $this->option_get( 'cp_min_page_width' );
+		
+		// set signup flag
+		$vars['cp_is_signup_page'] = '0';
+		
+		// test for signup
+		if ( $this->parent_obj->is_signup_page() ) {
+		
+			// set flag
+			$vars['cp_is_signup_page'] = '1';
 			
 		}
 		
@@ -2258,50 +2315,45 @@ class CommentPressDatabase {
 	 *
 	 */
 	function create_special_pages() {
-	
-		// NOTE: one of the Commentpress themes MUST be active, or WordPress will
-		// fail to set the page templates for the pages that require them.
+		
+		// NOTE: one of the Commentpress themes MUST be active...
+		// or WordPress will fail to set the page templates for the pages that require them.
 		// Also, a user must be logged in for these pages to be associated with them.
 	
-		// Is it one of our themes?
-		if ( $this->parent_obj->is_allowed_theme() ) {
+		// get special pages array, if it's there
+		$special_pages = $this->option_get( 'cp_special_pages' );
+	
 
-			// get special pages array, if it's there
-			$special_pages = $this->option_get( 'cp_special_pages' );
+
+		// create welcome/title page, but don't add to special pages
+		$welcome = $this->_create_title_page();
 		
+		// create general comments page
+		$special_pages[] = $this->_create_general_comments_page();
 
+		// create all comments page
+		$special_pages[] = $this->_create_all_comments_page();
+		
+		// create comments by author page
+		$special_pages[] = $this->_create_comments_by_author_page();
 
-			// create welcome/title page
-			$special_pages[] = $this->_create_title_page();
-			
-			// create general comments page
-			$special_pages[] = $this->_create_general_comments_page();
-
-			// create all comments page
-			$special_pages[] = $this->_create_all_comments_page();
-			
-			// create comments by author page
-			$special_pages[] = $this->_create_comments_by_author_page();
-
-			// create blog page
-			$special_pages[] = $this->_create_blog_page();
-			
-			// create blog archive page
-			$special_pages[] = $this->_create_blog_archive_page();
-			
-			// create TOC page -> a convenience, let's us define a logo as attachment
-			$special_pages[] = $this->_create_toc_page();
+		// create blog page
+		$special_pages[] = $this->_create_blog_page();
+		
+		// create blog archive page
+		$special_pages[] = $this->_create_blog_archive_page();
+		
+		// create TOC page -> a convenience, let's us define a logo as attachment
+		$special_pages[] = $this->_create_toc_page();
 
 
 
-			// store the array of page IDs that were created
-			$this->option_set( 'cp_special_pages', $special_pages );
-			
-			// save changes
-			$this->options_save();
-	
-		}
-	
+		// store the array of page IDs that were created
+		$this->option_set( 'cp_special_pages', $special_pages );
+		
+		// save changes
+		$this->options_save();
+
 	}
 	
 	
@@ -2411,54 +2463,55 @@ class CommentPressDatabase {
 		
 
 
-		// Is it one of our themes?
-		if ( $this->parent_obj->is_allowed_theme() ) {
+		// only delete special pages if we have one of the Commentpress themes active
+		// because other themes may have a totally different way of presenting the
+		// content of the blog
+
+		// retrieve data on special pages
+		$special_pages = $this->option_get( 'cp_special_pages' );
 		
-			// only delete special pages if we have one of the Commentpress themes active
-			// because other themes may have a totally different way of presenting the
-			// content of the blog
-	
-			// retrieve data on special pages
-			$special_pages = $this->option_get( 'cp_special_pages' );
+		// if we have created any...
+		if ( is_array( $special_pages ) AND count( $special_pages ) > 0 ) {
+		
+			// loop through them
+			foreach( $special_pages AS $special_page ) {
 			
-			// if we have created any...
-			if ( is_array( $special_pages ) AND count( $special_pages ) > 0 ) {
+				// bypass trash
+				$force_delete = true;
 			
-				// loop through them
-				foreach( $special_pages AS $special_page ) {
+				// try and delete each page...
+				if ( !wp_delete_post( $special_page, $force_delete ) ) {
 				
-					// try and delete each page...
-					if ( !wp_delete_post( $special_page ) ) {
-					
-						// oops, set success flag to false
-						$success = false;
-					
-					}
+					// oops, set success flag to false
+					$success = false;
 				
 				}
 			
-				// delete the corresponding options
-				$this->option_delete( 'cp_special_pages' );
-				$this->option_delete( 'cp_welcome_page' );
-				$this->option_delete( 'cp_blog_page' );
-				$this->option_delete( 'cp_blog_archive_page' );
-				$this->option_delete( 'cp_general_comments_page' );
-				$this->option_delete( 'cp_all_comments_page' );
-				$this->option_delete( 'cp_comments_by_page' );
-				$this->option_delete( 'cp_toc_page' );
-				
-				// save changes
-				$this->options_save();
-				
-				// reset Wordpress internal page references
-				$this->_reset_wordpress_option( 'show_on_front' );
-				$this->_reset_wordpress_option( 'page_on_front' );
-				$this->_reset_wordpress_option( 'page_for_posts' );
-		
 			}
 		
-		}
+			// delete the corresponding options
+			$this->option_delete( 'cp_special_pages' );
 
+			$this->option_delete( 'cp_blog_page' );
+			$this->option_delete( 'cp_blog_archive_page' );
+			$this->option_delete( 'cp_general_comments_page' );
+			$this->option_delete( 'cp_all_comments_page' );
+			$this->option_delete( 'cp_comments_by_page' );
+			$this->option_delete( 'cp_toc_page' );
+			
+			// for now, keep welcome page - delete option when page is deleted
+			//$this->option_delete( 'cp_welcome_page' );
+			
+			// save changes
+			$this->options_save();
+			
+			// reset Wordpress internal page references
+			$this->_reset_wordpress_option( 'show_on_front' );
+			$this->_reset_wordpress_option( 'page_on_front' );
+			$this->_reset_wordpress_option( 'page_for_posts' );
+	
+		}
+	
 
 
 		// --<
@@ -2485,109 +2538,112 @@ class CommentPressDatabase {
 		
 
 
-		// Is it one of our themes?
-		if ( $this->parent_obj->is_allowed_theme() ) {
-		
-			// only delete a special page if we have one of the Commentpress themes active
-			// because other themes may have a totally different way of presenting the
-			// content of the blog
-			
-
-
-			// get id of special page
-			switch( $_page ) {
-			
-				case 'title':
-				
-					// set flag
-					$flag = 'cp_welcome_page';
-
-					// reset Wordpress internal page references
-					$this->_reset_wordpress_option( 'show_on_front' );
-					$this->_reset_wordpress_option( 'page_on_front' );
-		
-					break;
-			
-				case 'general_comments':
-				
-					// set flag
-					$flag = 'cp_general_comments_page';
-					break;
-			
-				case 'all_comments':
-				
-					// set flag
-					$flag = 'cp_all_comments_page';
-					break;
-			
-				case 'comments_by_author':
-				
-					// set flag
-					$flag = 'cp_comments_by_page';
-					break;
-			
-				case 'blog':
-				
-					// set flag
-					$flag = 'cp_blog_page';
-
-					// reset Wordpress internal page reference
-					$this->_reset_wordpress_option( 'page_for_posts' );
-				
-					break;
-			
-				case 'blog_archive':
-				
-					// set flag
-					$flag = 'cp_blog_archive_page';
-					break;
-			
-				case 'toc':
-				
-					// set flag
-					$flag = 'cp_toc_page';
-					break;
-			
-			}
-			
-
-
-			// get page id
-			$page_id = $this->option_get( $flag );
-			
-			// kick out if it doesn't exist
-			if ( !$page_id ) { return true; }
-
-
-
-			// delete option
-			$this->option_delete( $flag );
-
-
-
-			// try and delete the page...
-			if ( !wp_delete_post( $page_id ) ) {
-			
-				// oops, set success flag to false
-				$success = false;
-			
-			}
+		// only delete a special page if we have one of the Commentpress themes active
+		// because other themes may have a totally different way of presenting the
+		// content of the blog
 		
 
 
-			// retrieve data on special pages
-			$special_pages = $this->option_get( 'cp_special_pages' );
+		// get id of special page
+		switch( $_page ) {
+		
+			case 'title':
 			
-			// remove page id
+				// set flag
+				$flag = 'cp_welcome_page';
+
+				// reset Wordpress internal page references
+				$this->_reset_wordpress_option( 'show_on_front' );
+				$this->_reset_wordpress_option( 'page_on_front' );
+	
+				break;
+		
+			case 'general_comments':
+			
+				// set flag
+				$flag = 'cp_general_comments_page';
+				break;
+		
+			case 'all_comments':
+			
+				// set flag
+				$flag = 'cp_all_comments_page';
+				break;
+		
+			case 'comments_by_author':
+			
+				// set flag
+				$flag = 'cp_comments_by_page';
+				break;
+		
+			case 'blog':
+			
+				// set flag
+				$flag = 'cp_blog_page';
+
+				// reset Wordpress internal page reference
+				$this->_reset_wordpress_option( 'page_for_posts' );
+			
+				break;
+		
+			case 'blog_archive':
+			
+				// set flag
+				$flag = 'cp_blog_archive_page';
+				break;
+		
+			case 'toc':
+			
+				// set flag
+				$flag = 'cp_toc_page';
+				break;
+		
+		}
+		
+
+
+		// get page id
+		$page_id = $this->option_get( $flag );
+		
+		// kick out if it doesn't exist
+		if ( !$page_id ) { return true; }
+
+
+
+		// delete option
+		$this->option_delete( $flag );
+
+
+
+		// bypass trash
+		$force_delete = true;
+	
+		// try and delete the page...
+		if ( !wp_delete_post( $page_id, $force_delete ) ) {
+		
+			// oops, set success flag to false
+			$success = false;
+		
+		}
+	
+
+
+		// retrieve data on special pages
+		$special_pages = $this->option_get( 'cp_special_pages' );
+		
+		// is it in our special pages array?
+		if ( in_array( $page_id, $special_pages ) ) {
+		
+			// remove page id from array
 			$special_pages = array_diff( $special_pages, array( $page_id ) );
 
 			// reset option
 			$this->option_set( 'cp_special_pages', $special_pages );
-			
-			// save changes
-			$this->options_save();
-			
+		
 		}
+		
+		// save changes
+		$this->options_save();
 
 
 
@@ -3127,12 +3183,43 @@ class CommentPressDatabase {
 	 */
 	function _create_title_page() {
 	
+		// get the option, if it exists
+		$page_exists = $this->option_get( 'cp_welcome_page' );
+		
+		// don't create if we already have the option set
+		if ( $page_exists !== false AND is_numeric( $page_exists ) ) {
+			
+			// get the page (the plugin may have been deactivated, then the page deleted)
+			$welcome = get_post( $page_exists );
+			
+			// check that the page exists 
+			if ( !is_null( $welcome ) ) {
+			
+				// got it...
+		
+				// we still ought to set Wordpress internal page references
+				$this->_store_wordpress_option( 'show_on_front', 'page' );
+				$this->_store_wordpress_option( 'page_on_front', $page_exists );
+		
+				// --<
+				return $page_exists;
+				
+			} else {
+			
+				// page does not exist, continue on and create it
+			
+			}
+			
+		}
+		
+		
+		
 		// define welcome/title page
 		$title = array(
 			'post_status' => 'publish',
 			'post_type' => 'page',
 			'post_parent' => 0,
-			'comment_status' => 'closed',
+			'comment_status' => 'open',
 			'ping_status' => 'closed',
 			'to_ping' => '', // quick fix for Windows
 			'pinged' => '', // quick fix for Windows

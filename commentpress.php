@@ -4,7 +4,7 @@ Plugin Name: Commentpress
 Plugin URI: http://www.futureofthebook.org/commentpress/
 Description: Commentpress allows readers to comment paragraph by paragraph in the margins of a text. You can use it to annotate, gloss, workshop, debate and more! <strong>For Wordpress Multisite:</strong> do not network activate this plugin. For more information see the plugin docs.
 Author: Institute for the Future of the Book
-Version: 3.3.2
+Version: 3.3.3
 Author URI: http://www.futureofthebook.org
 ----------------------------------------------------------------
 Special thanks to:
@@ -14,10 +14,6 @@ Mark James, for the icon http://www.famfamfam.com/lab/icons/silk/
 ----------------------------------------------------------------
 */
 
-// set flag to activate Commentpress theme in multisite force-activated context
-if ( !defined( 'CP_ACTIVATE_THEME' ) ) {
-	define( 'CP_ACTIVATE_THEME', false );
-}
 
 
 
@@ -27,25 +23,12 @@ if ( !defined( 'CP_ACTIVATE_THEME' ) ) {
 // ----------------------------------------------------------------
 
 // set version
-define( 'CP_VERSION', '3.3.2' );
+define( 'CP_VERSION', '3.3.3' );
 
-// set testing flag
-if ( !defined( 'CP_PLUGIN_TESTING' ) ) {
-	define( 'CP_PLUGIN_TESTING', true );
-}
-
-// store this file
+// store reference to this file
 if ( !defined( 'CP_PLUGIN_FILE' ) ) {
 	define( 'CP_PLUGIN_FILE', __FILE__ );
 }
-
-// get directory name of WP_CONTENT_DIR
-
-// make a temp array by splitting the path on a known directory name
-$tmp_array = explode( trailingslashit( ABSPATH ), WP_CONTENT_DIR );
-
-// retain only what was appended to ABSPATH
-$wp_content_dirname = trailingslashit( $tmp_array[1] );
 
 
 
@@ -56,47 +39,9 @@ $wp_content_dirname = trailingslashit( $tmp_array[1] );
 ----------------------------------------------------------------
 Begin by establishing Plugin Context
 ----------------------------------------------------------------
-NOTE: needs an audit because it assumes dir names. Also, it may be that:
-plugin_dir_url( CP_PLUGIN_FILE ) fails in force-activated context
+NOTE: force-activated and network-activated contexts are now deprecated
 ----------------------------------------------------------------
 */
-
-// is our class file in the same directory as this file?
-if( is_file( dirname(__FILE__) . '/class_commentpress.php' ) ) {
-
-	// set current directory as plugin home directory
-	if ( !defined( 'CP_PLUGIN_ABS_PATH' ) ) {
-		define( 'CP_PLUGIN_ABS_PATH', str_replace( '\\', '/', trailingslashit( dirname(__FILE__) ) ) );
-	}
-	
-	// make a temp array by splitting the path on a known directory name
-	$tmp_array = explode( $wp_content_dirname, CP_PLUGIN_ABS_PATH );
-	
-	// retain only the path following the split to create a relative path
-	if ( !defined( 'CP_PLUGIN_REL_PATH' ) ) {
-		define( 'CP_PLUGIN_REL_PATH', $wp_content_dirname.$tmp_array[1] );
-	}
-	
-// is our class file in the plugin subdirectory?
-} elseif( is_file( dirname(__FILE__) . '/commentpress/class_commentpress.php' ) ) {
-
-	// set the subdirectory as home
-	define( 'CP_PLUGIN_ABS_PATH', str_replace( '\\', '/', dirname(__FILE__) . '/commentpress/' ) );
-	
-	// make a temp array by splitting the path on a known directory name
-	$tmp_array = explode( $wp_content_dirname, CP_PLUGIN_ABS_PATH );
-	
-	// retain only the path following the split to create a relative path
-	define( 'CP_PLUGIN_REL_PATH', $wp_content_dirname.$tmp_array[1] );
-
-} else {
-
-	// alert and start again
-	die( 'Commentpress cannot find the necessary files to start. Please check your installation.' );
-
-}
-
-
 
 // test for multisite location
 if ( basename( dirname(__FILE__) ) == 'mu-plugins' ) { 
@@ -110,7 +55,7 @@ if ( basename( dirname(__FILE__) ) == 'mu-plugins' ) {
 } elseif ( is_multisite() ) {
 
 	// check if our plugin is one of those activated sitewide
-	// NB: there MUST be a better way to do this!
+	// NOTE: there IS be a better way to do this! See Commentpress for Multisite...
 
 	// make a temp array by splitting path on a known directory name
 	$tmp_array = explode( trailingslashit( WP_PLUGIN_DIR ), CP_PLUGIN_FILE );
@@ -133,17 +78,17 @@ if ( basename( dirname(__FILE__) ) == 'mu-plugins' ) {
 	
 	}
 
-	// is the plugin active sitewide?
+	// is the plugin network activated?
 	if ( $flag ) {
 	
-		// selected sitewide forced activation
+		// yes, network activated
 		if ( !defined( 'CP_PLUGIN_CONTEXT' ) ) {
 			define( 'CP_PLUGIN_CONTEXT', 'mu_sitewide' );
 		}
 		
 	} else {
 
-		// optional/sitewide activation in multisite
+		// optional activation per blog in multisite
 		if ( !defined( 'CP_PLUGIN_CONTEXT' ) ) {
 			define( 'CP_PLUGIN_CONTEXT', 'mu_optional' );
 		}
@@ -182,7 +127,7 @@ if ( !class_exists( 'CommentPress' ) ) {
 	$cp_class_file = 'class_commentpress.php';
 
 	// define path to our class file
-	$cp_class_file_path = CP_PLUGIN_ABS_PATH . $cp_class_file;
+	$cp_class_file_path = plugin_dir_path( CP_PLUGIN_FILE ) . $cp_class_file;
 
 	// is our class definition present?
 	if ( !is_file( $cp_class_file_path ) ) {
@@ -203,6 +148,24 @@ if ( !class_exists( 'CommentPress' ) ) {
 	$commentpress_obj = new CommentPress;
 	
 
+	
+	/*
+	----------------------------------------------------------------
+	Critical Plugin Hooks
+	----------------------------------------------------------------
+	moved these three hooks to the main plugin file for sanity's sake and so we can
+	begin to rationalise the activate, deactivate and uninstall processes
+	----------------------------------------------------------------
+	*/
+	
+	// activation
+	register_activation_hook( CP_PLUGIN_FILE, array( &$commentpress_obj, 'activate' ) );
+	
+	// deactivation
+	register_deactivation_hook( CP_PLUGIN_FILE, array( &$commentpress_obj, 'deactivate' ) );
+	
+	// uninstall uses the 'uninstall.php' method
+	// see: http://codex.wordpress.org/Function_Reference/register_uninstall_hook
 	
 }
 
