@@ -1925,7 +1925,7 @@ Below are extra options for changing how the theme looks.</p>
 		
 		
 		
-		// do we have the option to choose the default sidebar (new in 3.4)?
+		// do we have the option to choose the default sidebar (new in 3.3.3)?
 		if ( !$this->parent_obj->db->option_exists('cp_sidebar_default') ) {
 		
 			// define upgrade
