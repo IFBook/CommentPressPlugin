@@ -1214,7 +1214,7 @@ class CommentPress {
 		$viz = $this->db->option_get( 'cp_title_visibility' );
 		
 		// if the custom field already has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
 			// get it
 			$viz = get_post_meta( $post->ID, $key, true );
@@ -1247,7 +1247,7 @@ class CommentPress {
 		$viz = $this->db->option_get( 'cp_page_meta_visibility' );
 		
 		// if the custom field already has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
 			// get it
 			$viz = get_post_meta( $post->ID, $key, true );
@@ -1290,7 +1290,7 @@ class CommentPress {
 			$format = 'arabic';
 			
 			// if the custom field already has a value...
-			if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+			if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 			
 				// get it
 				$format = get_post_meta( $post->ID, $key, true );
@@ -1330,7 +1330,7 @@ class CommentPress {
 			$value = 'text';
 
 			// if the custom field already has a value...
-			if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+			if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 			
 				// get it
 				$value = get_post_meta( $post->ID, $key, true );
@@ -1353,6 +1353,11 @@ class CommentPress {
 
 		// get post formatter
 		$this->_get_post_formatter_metabox( $post );
+		
+
+
+		// get default sidebar
+		$this->_get_default_sidebar_metabox( $post );
 		
 
 
@@ -1385,7 +1390,7 @@ class CommentPress {
 		$key = '_cp_newer_version';
 		
 		// if the custom field already has a value...
-		if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+		if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 		
 			// get it
 			$new_post_id = get_post_meta( $post->ID, $key, true );
@@ -1431,6 +1436,11 @@ class CommentPress {
 		
 		// get post formatter
 		$this->_get_post_formatter_metabox( $post );
+		
+
+
+		// get default sidebar
+		$this->_get_default_sidebar_metabox( $post );
 		
 
 
@@ -2167,10 +2177,10 @@ class CommentPress {
 		// is this a commentable page?
 		if ( !$this->is_commentable() ) {
 		
-			// either activity or toc
+			// no - we must use either 'activity' or 'toc'
 			if ( $this->db->option_exists( 'cp_sidebar_default' ) ) {
 				
-				// override
+				// get option (we don't need to look at the page meta in this case)
 				$default = $this->db->option_get( 'cp_sidebar_default' );
 				
 				// use it unless it's 'comments'
@@ -2210,16 +2220,28 @@ class CommentPress {
 					// is it our title page?
 					if ( $post->ID == $this->db->option_get( 'cp_welcome_page' ) ) {
 					
-						// special case?
+						// use 'toc', but should this be a special case?
 						return 'toc';
 					
 					} else {
 					
-						// either comments, activity or toc
+						// either 'comments', 'activity' or 'toc'
 						if ( $this->db->option_exists( 'cp_sidebar_default' ) ) {
 							
-							// override
+							// get global option
 							$return = $this->db->option_get( 'cp_sidebar_default' );
+							
+							// check if the post/page has a meta value
+							$key = '_cp_sidebar_default';
+							
+							// if the custom field already has a value...
+							if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
+							
+								// get it
+								$return = get_post_meta( $post->ID, $key, true );
+								
+							}
+							
 							
 						}
 						
@@ -4288,7 +4310,7 @@ class CommentPress {
 				$value = $this->db->option_get('cp_blog_type');
 				
 				// but, if the custom field has a value...
-				if ( get_post_meta( $post->ID, $key, true ) != '' ) {
+				if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
 				
 					// get it
 					$value = get_post_meta( $post->ID, $key, true );
@@ -4317,6 +4339,58 @@ class CommentPress {
 				';
 
 			}
+			
+		}
+
+	}
+	
+	
+	
+	
+	
+	
+		
+	/** 
+	 * @description: adds the default sidebar preference to the page/post metabox
+	 * @todo:
+	 *
+	 */
+	function _get_default_sidebar_metabox( $post ) {
+		
+		// --------------------------------------------------------------
+		// Override post formatter
+		// --------------------------------------------------------------
+		
+		// do we have the option to choose the default sidebar (new in 3.3.3)?
+		if ( $this->db->option_exists( 'cp_sidebar_default' ) ) {
+		
+			// show a title
+			echo '<p><strong><label for="cp_sidebar_default">' . __( 'Default Sidebar' , 'commentpress-plugin' ) . '</label></strong></p>';
+			
+			// set key
+			$key = '_cp_sidebar_default';
+			
+			// default to show
+			$_sidebar = $this->db->option_get( 'cp_sidebar_default' );
+			
+			// if the custom field already has a value...
+			if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
+			
+				// get it
+				$_sidebar = get_post_meta( $post->ID, $key, true );
+				
+			}
+			
+			// select
+			echo '
+<p>
+<select id="cp_sidebar_default" name="cp_sidebar_default">
+	<option value="toc" '.(($_sidebar == 'toc') ? ' selected="selected"' : '').'>'.__('Contents', 'commentpress-plugin').'</option>
+	<option value="activity" '.(($_sidebar == 'activity') ? ' selected="selected"' : '').'>'.__('Activity', 'commentpress-plugin').'</option>
+	<option value="comments" '.(($_sidebar == 'comments') ? ' selected="selected"' : '').'>'.__('Comments', 'commentpress-plugin').'</option>
+</select>
+</p>
+';
 			
 		}
 

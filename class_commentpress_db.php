@@ -239,7 +239,7 @@ class CommentPressDatabase {
 			
 
 
-			// New in CP 3.4 - changed the way the welcome page works
+			// New in CP 3.3.3 - changed the way the welcome page works
 			if ( $this->option_exists( 'cp_special_pages' ) ) {
 			
 				// do we have the cp_welcome_page option?
@@ -268,7 +268,7 @@ class CommentPressDatabase {
 			
 
 
-			// New in CP 3.4 - are we missing the cp_sidebar_default option?
+			// New in CP 3.3.3 - are we missing the cp_sidebar_default option?
 			if ( !$this->option_exists( 'cp_sidebar_default' ) ) {
 			
 				// get choice
@@ -1772,6 +1772,51 @@ class CommentPressDatabase {
 
 
 
+		// --------------------------------------------------------------
+		// Default Sidebar
+		// --------------------------------------------------------------
+		
+		// do we have the option to choose the default sidebar (new in 3.3.3)?
+		if ( $this->option_exists( 'cp_sidebar_default' ) ) {
+		
+			// find and save the data
+			$_data = ( isset( $_POST['cp_sidebar_default'] ) ) ? 
+					 $_POST['cp_sidebar_default'] : 
+					 $this->db->option_get( 'cp_sidebar_default' );
+	
+			//print_r( '$_data: '.$_data ); die();
+			//print_r( $post ); die();
+	
+			// set key
+			$key = '_cp_sidebar_default';
+			
+			// if the custom field already has a value...
+			if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
+			
+				// if empty string...
+				if ( $_data === '' ) {
+			
+					// delete the meta_key
+					delete_post_meta( $post->ID, $key );
+				
+				} else {
+				
+					// update the data
+					update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+					
+				}
+				
+			} else {
+			
+				// add the data
+				add_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+				
+			}
+			
+		}
+
+
+
 	}
 	
 	
@@ -1871,6 +1916,51 @@ class CommentPressDatabase {
 		
 			// add the data
 			add_post_meta( $post->ID, $key, $wpdb->escape( $_formatter ) );
+			
+		}
+
+
+
+		// --------------------------------------------------------------
+		// Default Sidebar
+		// --------------------------------------------------------------
+		
+		// do we have the option to choose the default sidebar (new in 3.3.3)?
+		if ( $this->option_exists( 'cp_sidebar_default' ) ) {
+		
+			// find and save the data
+			$_data = ( isset( $_POST['cp_sidebar_default'] ) ) ? 
+					 $_POST['cp_sidebar_default'] : 
+					 $this->db->option_get( 'cp_sidebar_default' );
+	
+			//print_r( '$_data: '.$_data ); die();
+			//print_r( $post ); die();
+	
+			// set key
+			$key = '_cp_sidebar_default';
+			
+			// if the custom field already has a value...
+			if ( get_post_meta( $post->ID, $key, true ) !== '' ) {
+			
+				// if empty string...
+				if ( $_data === '' ) {
+			
+					// delete the meta_key
+					delete_post_meta( $post->ID, $key );
+				
+				} else {
+				
+					// update the data
+					update_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+					
+				}
+				
+			} else {
+			
+				// add the data
+				add_post_meta( $post->ID, $key, $wpdb->escape( $_data ) );
+				
+			}
 			
 		}
 
@@ -2054,7 +2144,7 @@ class CommentPressDatabase {
 			$previous_version = $previous_versions[0];
 		
 			// if the custom field has a value...
-			if ( get_post_meta( $previous_version->ID, $key, true ) != '' ) {
+			if ( get_post_meta( $previous_version->ID, $key, true ) !== '' ) {
 			
 				// delete it
 				delete_post_meta( $previous_version->ID, $key );
