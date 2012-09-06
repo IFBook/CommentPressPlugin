@@ -21,7 +21,7 @@ For further information and instructions please see the [Commentpress site](http
 
 This plugin only works in combination with the [Commentpress Theme](https://github.com/IFBook/CommentPressTheme). Please install and activate the theme before doing the following:
 
-1. Unzip the .zip file into `/wp-content/plugins/commentpress`
+1. Unzip the .zip file so that the plugin's files are located directly inside `/wp-content/plugins/commentpress`
 2. Activate the plugin
 3. Visit settings page and configure plugin
 4. You are done!
