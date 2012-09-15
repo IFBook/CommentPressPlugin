@@ -730,6 +730,16 @@ class CommentPress {
 		
 
 
+		// compat with Subscribe to Comments Reloaded
+		if( $this->is_subscribe_to_comments_reloaded_page() ) {
+		
+			// --<
+			return $content;
+			
+		}
+		
+		
+		
 		// compat with Theme My Login
 		if( $this->is_theme_my_login_page() ) {
 		
@@ -2140,6 +2150,46 @@ class CommentPress {
 			!$this->db->is_special_page() AND 
 			$post->post_name == 'login' AND 
 			$post->post_content == '[theme-my-login]'
+			
+		) {
+		
+			// --<
+			return true;
+			
+		}
+		
+		
+		
+		// --<
+		return false;
+
+	}
+	
+	
+	
+	
+	
+	
+	
+
+	/** 
+	 * @description: utility to check for presence of Subscribe to Comments Reloaded
+	 * @return boolean $success
+	 * @todo: 
+	 *
+	 */
+	function is_subscribe_to_comments_reloaded_page() {
+		
+		// access page
+		global $post;
+	
+		// compat with Subscribe to Comments Reloaded
+		if( 
+		
+			is_page() AND 
+			!$this->db->is_special_page() AND 
+			$post->ID == '9999999' AND 
+			$post->guid == get_bloginfo('url').'/?page_id=9999999'
 			
 		) {
 		
