@@ -116,28 +116,26 @@ class CommentPressDisplay {
 		// get all themes
 		if ( function_exists( 'wp_get_themes' ) ) {
 		
-			// get theme data the WP3.4 way...
-			$themes = wp_get_themes();
-			//print_r( $themes ); die();
-		
 			// get Commentpress theme by default, but allow overrides
-			// NB, the key in 3.4+ is the theme *directory name*
 			$target_theme = apply_filters(
-				'cp_forced_theme_name',
+				'cp_groupblog_theme_slug',
 				'commentpress'
 			);
 			
-			// the key is the theme name
-			if ( isset( $themes[ $target_theme ] ) ) {
-				
+			// get the theme we want
+			$theme = wp_get_theme( $target_theme );
+			
+			// if we get it...
+			if ( $theme->exists() AND $theme->is_allowed() ) {
+
 				// activate it
-				switch_theme(
-					$themes[ $target_theme ]->template, 
-					$themes[ $target_theme ]->stylesheet
+				switch_theme( 
+					$theme->get_template(), 
+					$theme->get_stylesheet() 
 				);
-		
+				
 			}
-	
+
 		} else {
 			
 			// use pre-3.4 logic

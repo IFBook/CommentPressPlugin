@@ -1559,17 +1559,6 @@ class CommentPress {
 		// store our meta data
 		$result = $this->db->save_meta( $post );
 		
-		// get workflow
-		$_workflow = $this->db->option_get( 'cp_blog_workflow' );
-		
-		// if it's enabled...
-		if ( $_workflow == '1' ) {
-		
-			// notify plugins that workflow stuff needs saving
-			do_action( 'cp_workflow_save_post', $post );
-		
-		}
-		
 	}
 	
 	
