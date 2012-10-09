@@ -2376,6 +2376,9 @@ class CommentPress {
 		// Theme My Login page is not
 		if ( $this->is_theme_my_login_page() ) { return false; }
 
+		// Subscribe to Comments Reloaded page is not
+		if ( $this->is_subscribe_to_comments_reloaded_page() ) { return false; }
+
 
 	
 		// --<
