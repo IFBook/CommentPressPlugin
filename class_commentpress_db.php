@@ -2269,10 +2269,11 @@ class CommentPressDatabase {
 		
 		
 		
-		// assume no admin bar
+		// assume no admin bars
 		$vars['cp_wp_adminbar'] = 'n';
+		$vars['cp_bp_adminbar'] = 'n';
 
-		// are we showing the admin bar?
+		// are we showing the WP admin bar?
 		if ( function_exists( 'is_admin_bar_showing' ) AND is_admin_bar_showing() ) {
 			
 			// we have it...
@@ -2292,8 +2293,8 @@ class CommentPressDatabase {
 	
 			}
 			
-			// check for BP version (1.6 uses the WP admin bar instead of a custom one)
-			if ( version_compare( BP_VERSION, '1.6', '<' ) ) {
+			// check for BP versions prior to 1.6 (1.6 uses the WP admin bar instead of a custom one)
+			if ( !function_exists( 'bp_get_version' ) ) {
 				
 				// but, this can already be overridden in bp-custom.php
 				// NOTE: can we override this *back* in 1.6?
