@@ -2269,10 +2269,11 @@ class CommentPressDatabase {
 		
 		
 		
-		// assume no admin bar
+		// assume no admin bars
 		$vars['cp_wp_adminbar'] = 'n';
+		$vars['cp_bp_adminbar'] = 'n';
 
-		// are we showing the admin bar?
+		// are we showing the WP admin bar?
 		if ( function_exists( 'is_admin_bar_showing' ) AND is_admin_bar_showing() ) {
 			
 			// we have it...
@@ -2292,8 +2293,8 @@ class CommentPressDatabase {
 	
 			}
 			
-			// check for BP version (1.6 uses the WP admin bar instead of a custom one)
-			if ( version_compare( BP_VERSION, '1.6', '<' ) ) {
+			// check for BP versions prior to 1.6 (1.6 uses the WP admin bar instead of a custom one)
+			if ( !function_exists( 'bp_get_version' ) ) {
 				
 				// but, this can already be overridden in bp-custom.php
 				// NOTE: can we override this *back* in 1.6?
@@ -3404,7 +3405,13 @@ class CommentPressDatabase {
 		$title['post_title'] = apply_filters( 'cp_title_page_title', $_title );
 		
 		// default content
-		$content = __( 'This is your title page. Edit it to suit your needs. It has been automatically set as your homepage but if you want another page as your homepage, set it in <em>Wordpress</em> &#8594; <em>Settings</em> &#8594; <em>Reading</em>.', 'commentpress-plugin' );
+		$content = __( 'Welcome to your new Commentpress site, which allows your readers to comment paragraph-by-paragraph or line-by-line in the margins of a text. Annotate, gloss, workshop, debate: with Commentpress you can do all of these things on a finer-grained level, turning a document into a conversation.
+
+This is your title page. Edit it to suit your needs. It has been automatically set as your homepage but if you want another page as your homepage, set it in <em>Wordpress</em> &#8594; <em>Settings</em> &#8594; <em>Reading</em>.
+
+You can also set a number of options in <em>Wordpress</em> &#8594; <em>Settings</em> &#8594; <em>Commentpress</em> to make the site work the way you want it to. Use the Theme Customizer to change the way your site looks in <em>Wordpress</em> &#8594; <em>Appearance</em> &#8594; <em>Customize</em>. For help with structuring, formatting and reading text in Commentpress, please refer to the <a href="http://www.futureofthebook.org/commentpress/">Commentpress website</a>.', 'commentpress-plugin' 
+			
+		);
 		
 		// set, but allow overrides
 		$title['post_content'] = apply_filters( 'cp_title_page_content', $content );
