@@ -249,19 +249,14 @@ class CommentPress {
 
 
 	/**
-	 * @description: configure when BuddyPress is active
+	 * @description: called when BuddyPress is active
 	 * @todo: 
 	 *
 	 */
 	function buddypress_init() {
 	
-		// for BuddyPress integration...
-		if ( defined( 'BP_VERSION' ) ) {
-		
-			// we've got BuddyPress installed
-			$this->buddypress = true;
-			
-		}
+		// we've got BuddyPress installed
+		$this->buddypress = true;
 	
 	}
 	
@@ -2376,6 +2371,9 @@ class CommentPress {
 		// Theme My Login page is not
 		if ( $this->is_theme_my_login_page() ) { return false; }
 
+		// Subscribe to Comments Reloaded page is not
+		if ( $this->is_subscribe_to_comments_reloaded_page() ) { return false; }
+
 
 	
 		// --<
@@ -2569,16 +2567,13 @@ class CommentPress {
 			
 		}
 		
-		// if BP installed...
-		if ( defined( 'BP_VERSION' ) ) {
+		// if BP installed, then the following actions will fire...
+
+		// enable BuddyPress functionality
+		add_action( 'bp_include', array( &$this, 'buddypress_init' ) );
 		
-			// enable BuddyPress functionality
-			add_action( 'bp_include', array( &$this, 'buddypress_init' ) );
-			
-			// add BuddyPress functionality (really late, so group object is set up)
-			add_action( 'bp_setup_globals', array( &$this, 'buddypress_globals_loaded' ), 1000 );
-			
-		}
+		// add BuddyPress functionality (really late, so group object is set up)
+		add_action( 'bp_setup_globals', array( &$this, 'buddypress_globals_loaded' ), 1000 );
 		
 	}
 	
