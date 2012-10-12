@@ -668,44 +668,102 @@ HELPTEXT;
 			// run through them...
 			foreach( $posts AS $item ) {
 			
+				// init output
+				$_html = '';
+			
 				//print_r( $item ); die();
 				//setup_postdata( $item );
 		
 				// get comment count for that post
 				$count = count( $this->parent_obj->db->get_approved_comments( $item->ID ) );
 				
-				// in BP, use its function
-				if ( $this->parent_obj->is_buddypress() ) {
+				// compat with Co-Authors Plus
+				if ( function_exists( 'get_coauthors' ) ) {
 				
-					// buddypress link ($no_anchor = null, $just_link = null)
-					$author = bp_core_get_userlink( $item->post_author );
+					// get multiple authors
+					$authors = get_coauthors( $item->ID );
+					//print_r( $authors ); die();
 					
+					// if we get some
+					if ( !empty( $authors ) ) {
+					
+						// use the Co-Authors format of "name, name, name & name"
+						$author_html = '';
+						
+						// init counter
+						$n = 1;
+						
+						// find out how many author we have
+						$author_count = count( $authors );
+					
+						// loop
+						foreach( $authors AS $author ) {
+							
+							// default to comma
+							$sep = ', ';
+							
+							// if we're on the penultimate
+							if ( $n == ($author_count - 1) ) {
+							
+								// use ampersand
+								$sep = __( ' &amp; ', 'commentpress-theme' );
+								
+							}
+							
+							// if we're on the last, don't add
+							if ( $n == $author_count ) { $sep = ''; }
+							
+							// get name
+							$author_html .= cp_echo_post_author( $author->ID, false );
+							
+							// and separator
+							$author_html .= $sep;
+							
+							// increment
+							$n++;
+							
+							// are we showing avatars?
+							if ( get_option( 'show_avatars' ) ) {
+							
+								// get avatar
+								$_html .= get_avatar( $author->ID, $size='32' );
+								
+							}
+								
+						}
+						
+						// add citation
+						$_html .= '<cite class="fn">'.$author_html.'</cite>'."\n";
+						
+						// add permalink
+						$_html .= '<p class="post_activity_date">'.get_the_time('l, F jS, Y', $item->ID).'</p>'."\n";
+							
+					}
+				
 				} else {
+				
+					// get avatar
+					$author_id = $item->post_author;
+
+					// are we showing avatars?
+					if ( get_option( 'show_avatars' ) ) {
 					
-					// get author url
-					$url = get_author_posts_url( $item->post_author );
-					
-					// WP sometimes leaves 'http://' or 'https://' in the field
-					if (  $url == 'http://'  OR $url == 'https://' ) {
-					
-						// clear
-						$url = '';
-					
+						$_html .= get_avatar( $author_id, $size='32' );
+						
 					}
 					
-					// construct link to user url
-					$author = ( $url != '' ) ? 
-							  '<a href="'.$url.'">'.get_the_author_meta( 'display_name', $item->post_author ).'</a>' : 
-							  get_the_author_meta( 'display_name', $item->post_author );
+					// add citation
+					$_html .= '<cite class="fn">'.cp_echo_post_author( $author_id, false ).'</cite>';
+					
+					// add permalink
+					$_html .= '<p class="post_activity_date">'.get_the_time('l, F jS, Y', $item->ID).'</p>';
 					
 				}
-		
+					
 				// write list item
 				echo '<li class="title">
 				<div class="post-identifier">
-				'.get_avatar( $item->post_author, 32 ).'
-				<cite class="fn">'.$author.'</cite>
-				<p class="post_activity_date">'.get_the_time('l, F jS, Y', $item->ID ).'</p>
+				'.$_html.'
 				</div>
 				<a href="'.get_permalink( $item->ID ).'" class="post_activity_link">'.get_the_title( $item->ID ).' ('.$count.')</a>
 				</li>'."\n";
