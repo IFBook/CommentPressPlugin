@@ -714,7 +714,7 @@ HELPTEXT;
 							if ( $n == $author_count ) { $sep = ''; }
 							
 							// get name
-							$author_html .= cp_echo_post_author( $author->ID, false );
+							$author_html .= $this->echo_post_author( $author->ID, false );
 							
 							// and separator
 							$author_html .= $sep;
@@ -753,7 +753,7 @@ HELPTEXT;
 					}
 					
 					// add citation
-					$_html .= '<cite class="fn">'.cp_echo_post_author( $author_id, false ).'</cite>';
+					$_html .= '<cite class="fn">'.$this->echo_post_author( $author_id, false ).'</cite>';
 					
 					// add permalink
 					$_html .= '<p class="post_activity_date">'.get_the_time('l, F jS, Y', $item->ID).'</p>';
@@ -774,6 +774,57 @@ HELPTEXT;
 		
 	}
 	
+	
+	
+	
+	
+	
+	
+	/** 
+	 * @description: show username (with link)
+	 * @todo: remove from theme functions.php?
+	 *
+	 */
+	function echo_post_author( $author_id, $echo = true ) {
+	
+		// get author details
+		$user = get_userdata( $author_id );
+		
+		// kick out if we don't have a user with that ID
+		if ( !is_object( $user ) ) { return; }
+		
+		
+		
+		// access plugin
+		global $commentpress_obj, $post;
+	
+		// if we have the plugin enabled and it's BP
+		if ( is_object( $post ) AND is_object( $commentpress_obj ) AND $commentpress_obj->is_buddypress() ) {
+		
+			// construct user link
+			$author = bp_core_get_userlink( $user->ID );
+	
+		} else {
+		
+			// link to theme's author page
+			$link = sprintf(
+				'<a href="%1$s" title="%2$s" rel="author">%3$s</a>',
+				get_author_posts_url( $user->ID, $user->user_nicename ),
+				esc_attr( sprintf( __( 'Posts by %s' ), $user->display_name ) ),
+				esc_html( $user->display_name )
+			);
+			$author = apply_filters( 'the_author_posts_link', $link );
+	
+		}
+		
+		// if we're echoing
+		if ( $echo ) { 
+			echo $author;
+		} else {
+			return $author;
+		}
+			
+	}
 	
 	
 	
