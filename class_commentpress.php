@@ -2663,31 +2663,62 @@ class CommentPress {
 			<p style="text-align:center;">
 			<p style="text-align:justify;">
 			
+			AND
+			
+			<p style="text-align:left"> 
+			<p style="text-align:right"> 
+			<p style="text-align:center">
+			<p style="text-align:justify">
+			
 			-------------------------------------------------------------
 			*/
 			
 			// further checks when there's a <p> tag
 			if ( $tag == 'p' ) {
 				
-				// set pattern by TinyMCE tag attribute
-				switch ( substr( $paragraph, 0 , 22 ) ) {
+				// set pattern by TinyMCE tag attribute, if we have one...
+				if ( substr( $paragraph, 0 , 17 ) == '<p style="text-al' ) {
 				
-					case '<p style="text-align:l': $tag = 'p style="text-align:left;"'; break;
-					case '<p style="text-align:r': $tag = 'p style="text-align:right;"'; break;
-					case '<p style="text-align:c': $tag = 'p style="text-align:center;"'; break;
-					case '<p style="text-align:j': $tag = 'p style="text-align:justify;"'; break;
-					
-					// if we fall through to here, treat it like it's just a <p> tag above.
-					// This will fail if there are custom attributes set in the HTML editor,
-					// but I'm not sure how to handle that without migrating to an XML parser
+					// test for left
+					if ( substr( $paragraph, 0 , 27 ) == '<p style="text-align:left;"' ) {
+						$tag = 'p style="text-align:left;"';
+					} elseif ( substr( $paragraph, 0 , 26 ) == '<p style="text-align:left"' ) {
+						$tag = 'p style="text-align:left"';
+					}
+		
+					// test for right
+					if ( substr( $paragraph, 0 , 28 ) == '<p style="text-align:right;"' ) {
+						$tag = 'p style="text-align:right;"';
+					} elseif ( substr( $paragraph, 0 , 27 ) == '<p style="text-align:right"' ) {
+						$tag = 'p style="text-align:right"';
+					}
+		
+					// test for center
+					if ( substr( $paragraph, 0 , 29 ) == '<p style="text-align:center;"' ) {
+						$tag = 'p style="text-align:center;"';
+					} elseif ( substr( $paragraph, 0 , 28 ) == '<p style="text-align:center"' ) {
+						$tag = 'p style="text-align:center"';
+					}
+		
+					// test for justify
+					if ( substr( $paragraph, 0 , 30 ) == '<p style="text-align:justify;"' ) {
+						$tag = 'p style="text-align:justify;"';
+					} elseif ( substr( $paragraph, 0 , 29 ) == '<p style="text-align:justify"' ) {
+						$tag = 'p style="text-align:justify"';
+					}
 				
-				}
+				} // end check for text-align
 	
 				// test for Simple Footnotes para "heading"
-				switch ( substr( $paragraph, 0 , 16 ) ) {
-					case '<p class="notes"': $tag = 'p class="notes"'; break;
+				if ( substr( $paragraph, 0 , 16 ) == '<p class="notes"' ) {
+					$tag = 'p class="notes"';
 				}
 	
+				// if we fall through to here, treat it like it's just a <p> tag above.
+				// This will fail if there are custom attributes set in the HTML editor,
+				// but I'm not sure how to handle that without migrating to an XML parser
+				//print_r( $tag ); //die();
+			
 			}
 
 			/*

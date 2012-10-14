@@ -1271,13 +1271,32 @@ HELPTEXT;
 				break;
 							
 			case 'p':
+			case 'p style="text-align:left"':
 			case 'p style="text-align:left;"':
-			case 'p style="text-align:right;"':
-			case 'p style="text-align:center;"':
-			case 'p style="text-align:justify;"':
 		
 				// define para tag
 				$para_tag = '<'.$tag.' class="textblock" id="textblock-'.$text_signature.'">'.$commenticon; 
+				break;
+							
+			case 'p style="text-align:right"':
+			case 'p style="text-align:right;"':
+		
+				// define para tag
+				$para_tag = '<'.$tag.' class="textblock textblock-right" id="textblock-'.$text_signature.'">'.$commenticon; 
+				break;
+							
+			case 'p style="text-align:center"':
+			case 'p style="text-align:center;"':
+		
+				// define para tag
+				$para_tag = '<'.$tag.' class="textblock textblock-center" id="textblock-'.$text_signature.'">'.$commenticon; 
+				break;
+							
+			case 'p style="text-align:justify"':
+			case 'p style="text-align:justify;"':
+		
+				// define para tag
+				$para_tag = '<'.$tag.' class="textblock textblock-justify" id="textblock-'.$text_signature.'">'.$commenticon; 
 				break;
 							
 			case 'p class="notes"':
