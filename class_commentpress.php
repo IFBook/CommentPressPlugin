@@ -785,92 +785,67 @@ class CommentPress {
 			// if it hasn't...
 			if ( !$has_quicktag ) {
 			
-				// if, BP, what type of blog is this?
-				if ( $this->is_groupblog() ) {
+				// auto-format content accordingly
 				
-					// auto-format content accordingly
+				// get action to take
+				$action = apply_filters(
 					
-					// get action to take
-					$action = apply_filters(
-						
-						// hook
-						'cp_select_content_formatter',
-						
-						// default
-						'tag'
-						
-					);
+					// hook
+					'cp_select_content_formatter',
 					
-					// act on it
-					switch( $action ) {
-						
-						// for poetry, for example, line by line commenting formatter is better
-						case 'line' :
+					// default
+					'tag'
+					
+				);
+				
+				// act on it
+				switch( $action ) {
+					
+					// for poetry, for example, line by line commenting formatter is better
+					case 'line' :
 
-							// set constant - okay, since we never return here
-							if ( !defined( 'CP_BLOCK' ) ) 
-								define( 'CP_BLOCK', 'line' );
+						// set constant - okay, since we never return here
+						if ( !defined( 'CP_BLOCK' ) ) 
+							define( 'CP_BLOCK', 'line' );
+					
+						// generate text signatures array
+						$this->text_signatures = $this->_generate_line_signatures( $content );
+						//print_r( $this->text_signatures ); die();
 						
-							// generate text signatures array
-							$this->text_signatures = $this->_generate_line_signatures( $content );
-							//print_r( $this->text_signatures ); die();
-							
-							// only continue parsing if we have an array of sigs
-							if ( !empty( $this->text_signatures ) ) {
-							
-								// filter content by <br> and <br /> tags
-								$content = $this->_parse_lines( $content );
-								//$content = $this->_filter_content_by_line( $content );
-								
-							}
-							
-							break;
+						// only continue parsing if we have an array of sigs
+						if ( !empty( $this->text_signatures ) ) {
 						
-						// for general prose, existing formatter is fine
-						case 'tag' :
+							// filter content by <br> and <br /> tags
+							$content = $this->_parse_lines( $content );
+							//$content = $this->_filter_content_by_line( $content );
+							
+						}
+						
+						break;
+					
+					// for general prose, existing formatter is fine
+					case 'tag' :
 
-							// set constant
-							if ( !defined( 'CP_BLOCK' ) ) 
-								define( 'CP_BLOCK', 'tag' );
-								
-							// generate text signatures array
-							$this->text_signatures = $this->_generate_text_signatures( $content, 'p|ul|ol' );
-							//print_r( $this->text_signatures ); die();
+						// set constant
+						if ( !defined( 'CP_BLOCK' ) ) 
+							define( 'CP_BLOCK', 'tag' );
 							
-							// only continue parsing if we have an array of sigs
-							if ( !empty( $this->text_signatures ) ) {
-							
-								// filter content by <p>, <ul> and <ol> tags
-								$content = $this->_parse_content( $content, 'p|ul|ol' );
-								
-							}
-							
-							break;
-					
-					}
-					
-				} else {
-				
-					// as normal...
-					
-					// TO DO: check internal options, set on page/post edit screen
-			
-					// set constant
-					if ( !defined( 'CP_BLOCK' ) ) 
-						define( 'CP_BLOCK', 'tag' );
-				
-					// generate text signatures array
-					$this->text_signatures = $this->_generate_text_signatures( $content, 'p|ul|ol' );
-				
-					// only parse content if we have an array of sigs
-					if ( !empty( $this->text_signatures ) ) {
-					
-						// filter content by <p>, <ul> and <ol> tags
-						$content = $this->_parse_content( $content, 'p|ul|ol' );
+						// generate text signatures array
+						$this->text_signatures = $this->_generate_text_signatures( $content, 'p|ul|ol' );
+						//print_r( $this->text_signatures ); die();
 						
-					}
-					
+						// only continue parsing if we have an array of sigs
+						if ( !empty( $this->text_signatures ) ) {
+						
+							// filter content by <p>, <ul> and <ol> tags
+							$content = $this->_parse_content( $content, 'p|ul|ol' );
+							
+						}
+						
+						break;
+				
 				}
+				
 				
 			} else {
 			
