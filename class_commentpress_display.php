@@ -2597,7 +2597,7 @@ Below are extra options for changing how the theme looks.</p>
 			}
 			
 			// try using code from http://code.google.com/p/php-mobile-detect/
-			include( plugin_dir_path( CP_PLUGIN_FILE ) . 'inc/Mobile_Detect.php' );
+			include( plugin_dir_path( CP_PLUGIN_FILE ) . 'inc/mobile-detect/Mobile_Detect.php' );
 			
 			// init
 			$detect = new Mobile_Detect();
