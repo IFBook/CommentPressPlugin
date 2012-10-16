@@ -5,7 +5,7 @@ Commentpress is an open source theme and plugin for WordPress that allows reader
 
 Annotate, gloss, workshop, debate: with Commentpress you can do all of these things on a finer-grained level, turning a document into a conversation. It can be applied to a fixed document (paper/essay/book etc.) or to a running blog.
 
-Please note: this plugin only works with the official [Commentpress Theme](https://github.com/IFBook/CommentPressTheme).
+Please note: this plugin only works with the official [Commentpress Theme](https://github.com/IFBook/CommentPressTheme). Please make sure you have the same version of the plugin and theme.
 
 For Wordpress Multisite: do not network activate this plugin. Consider using [Commentpress for Multisite](https://github.com/IFBook/CommentPressMultisite), which will handle the setup of sub-blogs for you.
 
