@@ -1941,6 +1941,12 @@ class CommentPressParser {
 					
 					} else {
 					
+						// set property in case we need it
+						$comment->orphan = true;
+					
+						// clear text signature
+						$comment->comment_text_signature = '';
+					
 						// we have an orphaned comment - assign to page
 						$assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ][] = $comment;
 					
