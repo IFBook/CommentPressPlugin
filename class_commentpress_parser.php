@@ -399,7 +399,7 @@ class CommentPressParser {
 			
 			// get comment count
 			// NB: the sorted array contains whole page as key 0, so we use the incremented value
-			$comment_count = count( $this->comments_sorted[ $sig_key ] );
+			$comment_count = count( $this->comments_sorted[ $text_signature ] );
 			
 			// get comment icon
 			$commenticon = $this->parent_obj->display->get_icon( $comment_count, $text_signature, 'auto', $sig_key );
@@ -429,31 +429,62 @@ class CommentPressParser {
 			<p style="text-align:center;">
 			<p style="text-align:justify;">
 			
+			AND
+			
+			<p style="text-align:left"> 
+			<p style="text-align:right"> 
+			<p style="text-align:center">
+			<p style="text-align:justify">
+			
 			-------------------------------------------------------------
 			*/
 			
 			// further checks when there's a <p> tag
 			if ( $tag == 'p' ) {
 				
-				// set pattern by TinyMCE tag attribute
-				switch ( substr( $paragraph, 0 , 22 ) ) {
+				// set pattern by TinyMCE tag attribute, if we have one...
+				if ( substr( $paragraph, 0 , 17 ) == '<p style="text-al' ) {
 				
-					case '<p style="text-align:l': $tag = 'p style="text-align:left;"'; break;
-					case '<p style="text-align:r': $tag = 'p style="text-align:right;"'; break;
-					case '<p style="text-align:c': $tag = 'p style="text-align:center;"'; break;
-					case '<p style="text-align:j': $tag = 'p style="text-align:justify;"'; break;
-					
-					// if we fall through to here, treat it like it's just a <p> tag above.
-					// This will fail if there are custom attributes set in the HTML editor,
-					// but I'm not sure how to handle that without migrating to an XML parser
+					// test for left
+					if ( substr( $paragraph, 0 , 27 ) == '<p style="text-align:left;"' ) {
+						$tag = 'p style="text-align:left;"';
+					} elseif ( substr( $paragraph, 0 , 26 ) == '<p style="text-align:left"' ) {
+						$tag = 'p style="text-align:left"';
+					}
+		
+					// test for right
+					if ( substr( $paragraph, 0 , 28 ) == '<p style="text-align:right;"' ) {
+						$tag = 'p style="text-align:right;"';
+					} elseif ( substr( $paragraph, 0 , 27 ) == '<p style="text-align:right"' ) {
+						$tag = 'p style="text-align:right"';
+					}
+		
+					// test for center
+					if ( substr( $paragraph, 0 , 29 ) == '<p style="text-align:center;"' ) {
+						$tag = 'p style="text-align:center;"';
+					} elseif ( substr( $paragraph, 0 , 28 ) == '<p style="text-align:center"' ) {
+						$tag = 'p style="text-align:center"';
+					}
+		
+					// test for justify
+					if ( substr( $paragraph, 0 , 30 ) == '<p style="text-align:justify;"' ) {
+						$tag = 'p style="text-align:justify;"';
+					} elseif ( substr( $paragraph, 0 , 29 ) == '<p style="text-align:justify"' ) {
+						$tag = 'p style="text-align:justify"';
+					}
 				
-				}
+				} // end check for text-align
 	
 				// test for Simple Footnotes para "heading"
-				switch ( substr( $paragraph, 0 , 16 ) ) {
-					case '<p class="notes"': $tag = 'p class="notes"'; break;
+				if ( substr( $paragraph, 0 , 16 ) == '<p class="notes"' ) {
+					$tag = 'p class="notes"';
 				}
 	
+				// if we fall through to here, treat it like it's just a <p> tag above.
+				// This will fail if there are custom attributes set in the HTML editor,
+				// but I'm not sure how to handle that without migrating to an XML parser
+				//print_r( $tag ); //die();
+			
 			}
 
 			/*
@@ -761,7 +792,7 @@ class CommentPressParser {
 					
 					// get comment count
 					// NB: the sorted array contains whole page as key 0, so we use the incremented value
-					$comment_count = count( $this->comments_sorted[ $sig_key ] );
+					$comment_count = count( $this->comments_sorted[ $text_signature ] );
 					
 					// get comment icon
 					$commenticon = $this->parent_obj->display->get_icon( $comment_count, $text_signature, 'line', $sig_key );
@@ -1062,7 +1093,7 @@ class CommentPressParser {
 				
 				// get comment count
 				// NB: the sorted array contains whole page as key 0, so we use the incremented value
-				$comment_count = count( $this->comments_sorted[ $sig_key ] );
+				$comment_count = count( $this->comments_sorted[ $text_signature ] );
 				
 				// get comment icon
 				$commenticon = $this->parent_obj->display->get_icon( $comment_count, $text_signature, 'block', $sig_key );
@@ -1722,12 +1753,12 @@ class CommentPressParser {
 			if ( isset( $_assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ] ) ) {
 		
 				// add them first
-				$_comments[] = $_assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ];
+				$_comments[ 'WHOLE_PAGE_OR_POST_COMMENTS' ] = $_assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ];
 				
 			} else {
 			
 				// append empty array
-				$_comments[] = array();
+				$_comments[ 'WHOLE_PAGE_OR_POST_COMMENTS' ] = array();
 			
 			}
 			
@@ -1740,17 +1771,34 @@ class CommentPressParser {
 				if ( isset( $_assigned[ $text_signature ] ) ) {
 			
 					// append assigned comments
-					$_comments[] = $_assigned[ $text_signature ];
+					$_comments[ $text_signature ] = $_assigned[ $text_signature ];
 					
 				} else {
 				
 					// append empty array
-					$_comments[] = array();
+					$_comments[ $text_signature ] = array();
 				
 				}
 				
 			}
 			
+
+
+			// if we have any pingbacks or trackbacks...
+			if ( isset( $_assigned[ 'PINGS_AND_TRACKS' ] ) ) {
+		
+				// add them last
+				$_comments[ 'PINGS_AND_TRACKS' ] = $_assigned[ 'PINGS_AND_TRACKS' ];
+				
+			} else {
+			
+				// append empty array
+				$_comments[ 'PINGS_AND_TRACKS' ] = array();
+			
+			}
+			
+		
+
 		}
 		
 		
@@ -1946,9 +1994,19 @@ class CommentPressParser {
 					
 						// clear text signature
 						$comment->comment_text_signature = '';
+							
+						// is it a pingback or trackback?
+						if ( $comment->comment_type == 'trackback' OR $comment->comment_type == 'pingback' ) {
+		
+							// we have one - assign to pings
+							$assigned[ 'PINGS_AND_TRACKS' ][] = $comment;
+						
+						} else {
 					
-						// we have an orphaned comment - assign to page
-						$assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ][] = $comment;
+							// we have comment with no text sig - assign to page
+							$assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ][] = $comment;
+							
+						}
 					
 					}
 				
@@ -1956,8 +2014,18 @@ class CommentPressParser {
 				
 			} else {
 			
-				// we have comment with no text sig - assign to page
-				$assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ][] = $comment;
+				// is it a pingback or trackback?
+				if ( $comment->comment_type == 'trackback' OR $comment->comment_type == 'pingback' ) {
+
+					// we have one - assign to pings
+					$assigned[ 'PINGS_AND_TRACKS' ][] = $comment;
+				
+				} else {
+			
+					// we have comment with no text sig - assign to page
+					$assigned[ 'WHOLE_PAGE_OR_POST_COMMENTS' ][] = $comment;
+					
+				}
 			
 			}
 			
