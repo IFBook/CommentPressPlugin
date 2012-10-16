@@ -4,7 +4,7 @@ Plugin Name: Commentpress
 Plugin URI: http://www.futureofthebook.org/commentpress/
 Description: Commentpress allows readers to comment paragraph by paragraph in the margins of a text. You can use it to annotate, gloss, workshop, debate and more! <strong>For Wordpress Multisite:</strong> do not network activate this plugin. For more information see the plugin docs.
 Author: Institute for the Future of the Book
-Version: 3.3.4
+Version: 3.3.5
 Author URI: http://www.futureofthebook.org
 ----------------------------------------------------------------
 Special thanks to:
@@ -23,7 +23,7 @@ Mark James, for the icon http://www.famfamfam.com/lab/icons/silk/
 // ----------------------------------------------------------------
 
 // set version
-define( 'CP_VERSION', '3.3.3' );
+define( 'CP_VERSION', '3.3.5' );
 
 // store reference to this file
 if ( !defined( 'CP_PLUGIN_FILE' ) ) {
