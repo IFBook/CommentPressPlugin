@@ -3,7 +3,6 @@
 Class CommentPressParser Version 1.0
 ===============================================================
 AUTHOR			: Christian Wach <needle@haystack.co.uk>
-LAST MODIFIED	: 15/10/2012
 ---------------------------------------------------------------
 NOTES
 =====
