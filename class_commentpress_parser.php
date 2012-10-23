@@ -359,9 +359,26 @@ class CommentPressParser {
 	function _parse_content( $content, $tag = 'p|ul|ol' ) {
 	
 
+		/*
+		print_r( array( 
+		
+			'c' => $content 
+		
+		) ); 
+		
+		die();
+		*/
+		
+
+
+		// parse standalone captioned images
+		$content = $this->_parse_captions( $content );
+				
+
 
 		// get our paragraphs
 		$matches = $this->_get_text_matches( $content, $tag );
+		//print_r( $matches ); die();
 		
 		// kick out if we don't have any
 		if( !count( $matches ) ) {
@@ -602,7 +619,7 @@ class CommentPressParser {
 	
 		// filter out embedded tweets
 		$content = $this->_filter_twitter_embeds( $content );
-				
+		
 		// get our paragraphs (needed to split regex into two strings as some IDEs 
 		// don't like PHP closing tags, even they are part of a regex and not actually
 		// closing tags at all) 
@@ -653,7 +670,11 @@ class CommentPressParser {
 		
 		
 		
-	
+		// parse standalone captioned images
+		$content = $this->_parse_captions( $content );
+
+
+				
 		// get our paragraphs
 		$matches = $this->_get_text_matches( $content, $tag );
 		
@@ -732,6 +753,9 @@ class CommentPressParser {
 	 */
 	function _parse_lines( $content ) {
 	
+		// parse standalone captioned images
+		$content = $this->_parse_captions( $content );
+				
 		// get our lines
 		$matches = $this->_get_line_matches( $content );
 		//print_r( $matches ); die();
@@ -938,6 +962,11 @@ class CommentPressParser {
 		
 
 
+		// parse standalone captioned images
+		$content = $this->_parse_captions( $content );
+				
+
+
 		// explode by <span>
 		$output_array = $this->_get_line_matches( $content );
 		//print_r( $output_array ); die();
@@ -1045,6 +1074,9 @@ class CommentPressParser {
 	 */
 	function _parse_blocks( $content ) {
 	
+		// parse standalone captioned images
+		$content = $this->_parse_captions( $content );
+				
 		// get our lines
 		$matches = $this->_get_block_matches( $content );
 		//print_r( $matches ); die();
@@ -1141,6 +1173,9 @@ class CommentPressParser {
 	 */
 	function _get_block_matches( $content ) {
 		
+		// filter out embedded tweets
+		$content = $this->_filter_twitter_embeds( $content );
+				
 		// wp_texturize() does an okay job with creating paragraphs, but comments tend
 		// to screw things up. let's try and fix...
 
@@ -1299,6 +1334,11 @@ class CommentPressParser {
 		
 		
 		
+		// parse standalone captioned images
+		$content = $this->_parse_captions( $content );
+				
+
+
 		// get blocks array
 		$matches = $this->_get_block_matches( $content );
 		
@@ -1708,6 +1748,55 @@ class CommentPressParser {
 		
 		
 		
+	/** 
+	 * @description: wraps standalone captions (ie, not inside <p> tags) in <p>
+	 * @param string $content the post content
+	 * @return string $content the filtered post content
+	 * @todo:
+	 *
+	 */
+	function _parse_captions( $content ) {
+	
+		// filter captioned images that are *not* inside other tags
+		$pattern = array(
+		
+			'/\n<!-- cp_caption_start -->/',
+			'/<!-- cp_caption_end -->\n/'
+			
+		);
+		
+		// define replacements
+		$replace = array( 
+		
+			"\n".'<p><!-- cp_caption_start -->', 
+			'<!-- cp_caption_end --></p>'."\n"
+			
+		);
+		
+		// do replacement
+		$content = preg_replace( $pattern, $replace, $content );
+
+		/*
+		print_r( array( 
+		
+			'c' => $content 
+		
+		) ); 
+		
+		die();
+		*/
+
+		// --<
+		return $content;
+				
+	}
+	
+	
+	
+		
+		
+		
+
 	/** 
 	 * @description: get comments sorted by text signature and paragraph
 	 * @param integer $post_ID the ID of the post
