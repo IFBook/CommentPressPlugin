@@ -3,7 +3,6 @@
 Class CommentPress Version 1.0
 ===============================================================
 AUTHOR			: Christian Wach <needle@haystack.co.uk>
-LAST MODIFIED	: 04/05/2009
 ---------------------------------------------------------------
 NOTES
 =====
@@ -227,8 +226,8 @@ class CommentPress {
 				// deprecated argument
 				false,
 				
-				// path to directory containing translation files
-				plugin_dir_path( CP_PLUGIN_FILE ) . 'languages/'
+				// relative path to directory containing translation files
+				dirname( plugin_basename( CP_PLUGIN_FILE ) ) . '/languages/'
 	
 			);
 			
@@ -2352,7 +2351,7 @@ class CommentPress {
 		global $wp_version;
 	
 		// use translation
-		add_action( 'init', array( &$this, 'translation' ) );
+		add_action( 'plugins_loaded', array( &$this, 'translation' ) );
 		
 		// modify comment posting
 		add_action( 'comment_post', array( &$this, 'save_comment' ), 10, 2 );

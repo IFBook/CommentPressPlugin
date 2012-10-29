@@ -3,7 +3,6 @@
 CommentPress Uninstaller Version 1.0
 ===============================================================
 AUTHOR			: Christian Wach <needle@haystack.co.uk>
-LAST MODIFIED	: 18/07/2012
 ---------------------------------------------------------------
 NOTES
 =====
