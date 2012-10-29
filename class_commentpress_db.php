@@ -3,7 +3,6 @@
 Class CommentPressDatabase Version 1.0
 ===============================================================
 AUTHOR			: Christian Wach <needle@haystack.co.uk>
-LAST MODIFIED	: 04/05/2009
 ---------------------------------------------------------------
 NOTES
 =====

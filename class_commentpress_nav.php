@@ -3,7 +3,6 @@
 Class CommentPressNavigator Version 1.0
 ===============================================================
 AUTHOR			: Christian Wach <needle@haystack.co.uk>
-LAST MODIFIED	: 30/04/2009
 ---------------------------------------------------------------
 NOTES
 =====
