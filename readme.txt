@@ -1,7 +1,7 @@
 === Commentpress Plugin ===
 Contributors: christianwach, commentpress
-Donate link: 
-Tags: commentpress, buddypress,groups,blogs,groupblogs,content,comments,commenting,debate,collaboration
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PZSKM8T5ZP3SC
+Tags: commentpress,buddypress,groups,blogs,groupblogs,content,comments,commenting,debate,collaboration
 Requires at least: WP 3.3
 Tested up to: 3.4.2
 
