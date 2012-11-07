@@ -186,6 +186,9 @@ class CommentPressDatabase {
 		// always create special pages
 		$this->create_special_pages();
 		
+		// override widgets
+		$this->_clear_widgets();
+
 	}
 
 
@@ -483,6 +486,9 @@ class CommentPressDatabase {
 		
 		// reset comment paging option
 		$this->_reset_comment_paging();
+		
+		// restore widgets
+		$this->_reset_widgets();
 		
 		// always remove special pages
 		$this->delete_special_pages();
@@ -3770,6 +3776,41 @@ You can also set a number of options in <em>Wordpress</em> &#8594; <em>Settings<
 	
 
 
+	/** 
+	 * @description: clears widgets for a fresh start
+	 * @todo: 
+	 */
+	function _clear_widgets() {
+	
+		// set backup option
+		add_option( 'commentpress_sidebars_widgets', $this->option_wp_get( 'sidebars_widgets' ) );
+
+		// clear them
+		update_option( 'sidebars_widgets', null );
+
+	}
+	
+	
+	
+	
+	
+	
+	/** 
+	 * @description: resets widgets when plugin is deactivated
+	 * @todo: 
+	 */
+	function _reset_widgets() {
+	
+		// reset option
+		$this->_reset_wordpress_option( 'sidebars_widgets' );
+	
+	}
+	
+	
+	
+	
+	
+	
 	/** 
 	 * @description: cancels comment paging because CP will not work with comment paging
 	 * @todo: 
